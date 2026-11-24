@@ -12,6 +12,9 @@ void main() {
 
       await tester.tap(find.byKey(const Key('quiz-mode-math')));
       await tester.pumpAndSettle();
+      expect(find.text('Configurar atividade'), findsOneWidget);
+      await tester.tap(find.text('Começar'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('desconto de 15%'), findsOneWidget);
       expect(matematicaQuestion.options, hasLength(4));
       await tester.tap(find.byKey(const Key('show-hint')));
@@ -51,7 +54,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(finishButton);
       await tester.pumpAndSettle();
-      expect(find.text('Escolha seu quiz'), findsOneWidget);
+      expect(find.text('Aprenda jogando!'), findsOneWidget);
     },
   );
 
@@ -61,6 +64,9 @@ void main() {
     await tester.pumpWidget(const TuringclidesApp());
 
     await tester.tap(find.byKey(const Key('quiz-mode-logic')));
+    await tester.pumpAndSettle();
+    expect(find.text('Configurar atividade'), findsOneWidget);
+    await tester.tap(find.text('Começar'));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('logic-code')), findsOneWidget);
     expect(find.byKey(const Key('logic-trace')), findsOneWidget);

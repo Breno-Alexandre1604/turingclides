@@ -1,7 +1,7 @@
 @TestOn('browser')
 library;
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:test/test.dart';
 import 'package:turingclides/data/quiz_history_sqlite.dart'
     if (dart.library.js_interop) 'package:turingclides/data/quiz_history_web.dart';
 import 'package:turingclides/domain/models/quiz_result.dart';

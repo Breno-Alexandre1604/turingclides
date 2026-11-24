@@ -1,124 +1,158 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../application/partida_controller.dart';
+import '../../data/quiz_history_repository.dart';
 import '../../domain/games/quiz_compartilhado/quiz_question.dart';
-import '../../domain/games/quiz_compartilhado/quiz_session.dart';
+import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import 'quiz_execution_screen.dart';
+import 'quiz_result_screen.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
     super.key,
-    required this.title,
-    required this.question,
+    required this.strategy,
+    required this.difficulty,
+    required this.count,
+    this.repository,
   });
 
-  final String title;
-  final QuizQuestion question;
+  final QuizStrategy strategy;
+  final QuizDifficulty difficulty;
+  final int count;
+  final QuizHistoryRepository? repository;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  late final QuizSession _session;
-  bool _showHint = false;
+  late final _round = PartidaController(
+    strategy: widget.strategy,
+    difficulty: widget.difficulty,
+    count: widget.count,
+  );
+  final _scroll = ScrollController();
+  bool _finishing = false;
 
   @override
-  void initState() {
-    super.initState();
-    _session = QuizSession(widget.question);
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
   }
 
-  void _selectOption(int index) {
-    setState(() {
-      _session.selectOption(index);
-    });
-  }
-
-  void _confirmSelection() {
-    setState(() {
-      _session.confirmSelection();
-    });
+  void _continueRound() {
+    if (_finishing || !_round.session.isConfirmed) return;
+    if (_round.advance()) {
+      setState(() {});
+      _scroll.jumpTo(0);
+      return;
+    }
+    _finishing = true;
+    final result = _round.finish();
+    Navigator.of(context).pushReplacement<void, void>(
+      MaterialPageRoute(
+        builder: (_) => QuizResultScreen(
+          result: result,
+          repository: widget.repository ?? quizHistoryRepository,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final session = _round.session;
+    final question = session.question;
+    final feedback = widget.strategy.feedback(question);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(title: Text(widget.strategy.title)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760),
           child: ListView(
+            controller: _scroll,
             key: const Key('quiz-scroll-view'),
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             children: [
               Text(
-                widget.question.prompt,
+                'Questão ${_round.number} de ${_round.count} · ${widget.difficulty.label}',
+              ),
+              Text('${_round.points} pontos', key: const Key('round-points')),
+              const SizedBox(height: 16),
+              Text(
+                question.prompt,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
-              if (widget.question.codeSnippet case final code?) ...[
-                const SizedBox(height: 16),
+              if (question.codeSnippet case final code?) ...[
+                const SizedBox(height: 12),
                 _CodeSnippet(code: code),
               ],
-              if (widget.question.traceSteps.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _TraceTable(steps: widget.question.traceSteps),
-              ],
-              const SizedBox(height: 24),
-              for (var index = 0;
-                  index < widget.question.options.length;
-                  index++) ...[
+              const SizedBox(height: 16),
+              for (var i = 0; i < question.options.length; i++) ...[
                 _AnswerOption(
-                  key: Key('option-$index'),
-                  label: widget.question.options[index],
-                  index: index,
-                  isSelected: _session.selectedOptionIndex == index,
-                  isConfirmed: _session.isConfirmed,
-                  isCorrectAnswer:
-                      widget.question.correctOptionIndex == index,
-                  onTap: () => _selectOption(index),
+                  key: Key('option-$i'),
+                  label: question.options[i],
+                  index: i,
+                  isSelected: session.selectedOptionIndex == i,
+                  isConfirmed: session.isConfirmed,
+                  isCorrectAnswer: question.correctOptionIndex == i,
+                  onTap: () => setState(() => session.selectOption(i)),
                 ),
                 const SizedBox(height: 8),
               ],
-              const SizedBox(height: 12),
-              if (!_session.isConfirmed)
+              if (!session.isConfirmed && !session.usedHint)
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     key: const Key('show-hint'),
-                    onPressed: () => setState(() => _showHint = true),
+                    onPressed: () => setState(session.revealHint),
                     icon: const Icon(Icons.lightbulb_outline),
-                    label: const Text('Mostrar dica'),
+                    label: const Text('Mostrar dica (−30 no acerto)'),
                   ),
                 ),
-              if (_showHint || _session.isConfirmed) ...[
-                const SizedBox(height: 8),
+              if (session.usedHint || session.isConfirmed)
                 _InfoCard(
                   title: 'Dica',
-                  content: widget.question.hint,
+                  content: question.hint,
                   icon: Icons.lightbulb_outline,
                 ),
-              ],
-              const SizedBox(height: 16),
-              if (_session.isConfirmed)
-                _AnswerFeedback(
-                  isCorrect: _session.isCorrect,
-                  selectedAnswer:
-                      widget.question.options[_session.confirmedOptionIndex!],
-                  explanation: widget.question.explanation,
-                )
-              else
+              const SizedBox(height: 12),
+              if (!session.isConfirmed)
                 FilledButton(
                   key: const Key('confirm-answer'),
-                  onPressed:
-                      _session.canConfirm ? _confirmSelection : null,
+                  onPressed: session.canConfirm
+                      ? () => setState(() {
+                          _round.confirm();
+                        })
+                      : null,
                   child: const Text('Confirmar resposta'),
+                )
+              else ...[
+                _AnswerFeedback(
+                  isCorrect: session.isCorrect,
+                  selectedAnswer:
+                      question.options[session.confirmedOptionIndex!],
+                  correctAnswer: question.options[question.correctOptionIndex],
+                  explanation: feedback.explanation,
                 ),
-              if (_session.isConfirmed) ...[
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  key: const Key('finish-quiz'),
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.check),
-                  label: const Text('Encerrar quiz'),
+                if (feedback.canTrace)
+                  OutlinedButton.icon(
+                    key: const Key('view-execution'),
+                    onPressed: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute(
+                        builder: (_) => QuizExecutionScreen(question: question),
+                      ),
+                    ),
+                    icon: const Icon(Icons.code),
+                    label: const Text('Ver execução'),
+                  ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  key: Key(_round.isLast ? 'finish-quiz' : 'next-question'),
+                  onPressed: _continueRound,
+                  child: Text(
+                    _round.isLast ? 'Ver resultado' : 'Próxima questão',
+                  ),
                 ),
               ],
             ],
@@ -218,38 +252,6 @@ class _CodeSnippet extends StatelessWidget {
   }
 }
 
-class _TraceTable extends StatelessWidget {
-  const _TraceTable({required this.steps});
-
-  final List<QuizTraceStep> steps;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      key: const Key('logic-trace'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Teste de mesa', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            for (final step in steps)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  'i = ${step.iteration}: valor ${step.valueBefore} → '
-                  '${step.valueAfter}; total ${step.totalBefore} → '
-                  '${step.totalAfter}',
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _InfoCard extends StatelessWidget {
   const _InfoCard({
     required this.title,
@@ -292,11 +294,13 @@ class _AnswerFeedback extends StatelessWidget {
   const _AnswerFeedback({
     required this.isCorrect,
     required this.selectedAnswer,
+    required this.correctAnswer,
     required this.explanation,
   });
 
   final bool isCorrect;
   final String selectedAnswer;
+  final String correctAnswer;
   final String explanation;
 
   @override
@@ -304,7 +308,7 @@ class _AnswerFeedback extends StatelessWidget {
     return _InfoCard(
       title: isCorrect ? 'Resposta correta!' : 'Resposta incorreta.',
       content:
-          'Resposta selecionada: $selectedAnswer\n\n$explanation',
+          'Resposta selecionada: $selectedAnswer\nGabarito: $correctAnswer\n\n$explanation',
       icon: isCorrect ? Icons.check_circle_outline : Icons.info_outline,
     );
   }

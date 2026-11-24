@@ -1,17 +1,31 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../data/quiz_history_repository.dart';
+import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import '../progresso/player_screen.dart';
 import '../widgets/game_controls.dart';
 import 'configuration_screen.dart';
 
 // Home e cartões de Leonardo com o percurso Home → configuração de Lucas.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.repository});
 
-  void _abrirConfiguracao(BuildContext context, QuizMode mode) {
+  final QuizHistoryRepository? repository;
+
+  void _abrirConfiguracao(BuildContext context, QuizStrategy strategy) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: '/configuracao'),
-        builder: (_) => ConfigurationScreen(mode: mode),
+        builder: (_) =>
+            ConfigurationScreen(strategy: strategy, repository: repository),
+      ),
+    );
+  }
+
+  void _abrirDados(BuildContext context, PlayerSection section) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => PlayerScreen(section: section, repository: repository),
       ),
     );
   }
@@ -24,11 +38,11 @@ class HomeScreen extends StatelessWidget {
           'Turingclides',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: const [
+        actions: [
           IconButton(
             tooltip: 'Perfil',
-            onPressed: null,
-            icon: Icon(Icons.person_outline),
+            onPressed: () => _abrirDados(context, PlayerSection.profile),
+            icon: const Icon(Icons.person_outline),
           ),
         ],
       ),
@@ -61,7 +75,7 @@ class HomeScreen extends StatelessWidget {
                 descricao: 'Responda perguntas e veja dicas.',
                 icone: Icons.functions,
                 cor: Colors.indigo,
-                onTap: () => _abrirConfiguracao(context, QuizMode.matematica),
+                onTap: () => _abrirConfiguracao(context, matematicaStrategy),
               ),
               ModeCard(
                 key: const Key('quiz-mode-logic'),
@@ -69,16 +83,16 @@ class HomeScreen extends StatelessWidget {
                 descricao: 'Resolva desafios de programação.',
                 icone: Icons.code,
                 cor: Colors.teal,
-                onTap: () => _abrirConfiguracao(context, QuizMode.logica),
+                onTap: () => _abrirConfiguracao(context, logicaStrategy),
               ),
               const SizedBox(height: 20),
               OutlinedButton.icon(
-                onPressed: null,
+                onPressed: () => _abrirDados(context, PlayerSection.history),
                 icon: const Icon(Icons.history),
                 label: const Text('Ver histórico'),
               ),
               OutlinedButton.icon(
-                onPressed: null,
+                onPressed: () => _abrirDados(context, PlayerSection.progress),
                 icon: const Icon(Icons.trending_up),
                 label: const Text('Ver progresso'),
               ),

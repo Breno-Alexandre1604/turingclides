@@ -1,17 +1,29 @@
-# turingclides
+# Turingclides
 
-A new Flutter project.
+Aplicativo educacional em Flutter. A tela inicial temporária permite demonstrar
+uma questão do Quiz de Matemática e uma do Quiz de Lógica, com seleção,
+confirmação, feedback e encerramento.
 
-## Getting Started
+## Executar
 
-This project is a starting point for a Flutter application.
+Abra no VS Code a pasta que contém `pubspec.yaml` e rode no terminal:
 
-A few resources to get you started if this is your first Flutter project:
+```powershell
+flutter pub get
+flutter run -t lib/main.dart
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Também é possível iniciar pelo VS Code com **F5**, selecionando um emulador ou
+dispositivo. A suíte de testes pode ser executada com:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+flutter test
+```
+
+## Questões dos quizzes
+
+As questões locais ficam em `lib/domain/games/quiz_matematica/` e
+`lib/domain/games/quiz_logica/`. O fluxo compartilhado e a sessão que bloqueia
+alterações depois da confirmação ficam em
+`lib/domain/games/quiz_compartilhado/`; a tela comum está em
+`lib/presentation/quizzes/`.

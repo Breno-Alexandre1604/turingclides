@@ -26,7 +26,7 @@ Roteiro, checklist de entrega e respostas para as perguntas mais prováveis. Ver
 | Perfil, partidas e progresso continuam após reiniciar | Feito | `dados_sqlite_test.dart` fecha e reabre o banco. **Conferir também no celular** |
 | Salvar de novo a mesma partida não duplica pontos | Feito | Contrato dos dados (simultâneo e após reabrir) |
 | Navegação, teclado e cronômetros funcionam ao sair e voltar | Feito | Teste "sair no meio da conta cancela o cronômetro" e foco do campo |
-| `flutter analyze` e testes executados | Feito | 0 problemas, 60 testes; o CI repete a cada push |
+| `flutter analyze` e testes executados | Feito | 0 problemas, 61 testes; o CI repete a cada push |
 | README com instalação, execução, funcionalidades e equipe | Feito | `README.md` |
 | APK conferido no aparelho da demonstração | **Pendente** | Instalar, jogar os três modos, fechar e reabrir |
 | Versão final identificada no GitHub | **Pendente** | Aprovar o pull request da `release/v1.0.0` para a `main` e criar a tag `v1.0.0` |

@@ -69,6 +69,6 @@ flutter test test/widgets/aparencia_test.dart test/widgets/rolagem_test.dart
 ```
 
 - `aparencia_test.dart` troca o tema no perfil, fecha e abre o app, confere a Home atualizando com uma partida nova e troca de aba deslizando.
-- `rolagem_test.dart` abre as telas num celular comum (393 × 851 dp) com a fonte Roboto de verdade e confere que as que cabem não rolam nem aceitam arrasto, e que um histórico longo continua rolando.
+- `rolagem_test.dart` abre as telas num celular comum (393 × 851 dp) com a fonte Roboto de verdade e confere que as que cabem (inclusive a Conta Rápida com o feedback na tela) não rolam nem aceitam arrasto, e que um histórico longo continua rolando. As fontes vêm da instalação do Flutter, também no CI.
 
 A conferência visual foi feita no navegador em tamanho de celular, no claro e no escuro. Ainda falta ver no celular de verdade.

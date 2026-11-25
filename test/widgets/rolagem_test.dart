@@ -10,15 +10,41 @@ import 'package:turingclides/data/dados_locais.dart';
 import 'package:turingclides/domain/models/quiz_result.dart';
 import 'package:turingclides/main.dart';
 
+/// Pasta `material_fonts` do Flutter que está rodando o teste. Não depende
+/// da variável FLUTTER_ROOT (o CI nem sempre a repassa): o executável dos
+/// testes fica em `<flutter>/bin/cache/artifacts/engine/<plataforma>/`.
+Directory _fontesDoFlutter() {
+  final raizes = [
+    if (Platform.environment['FLUTTER_ROOT'] case final raiz?)
+      Directory('$raiz/bin/cache/artifacts'),
+  ];
+  var pasta = File(Platform.resolvedExecutable).parent;
+  for (var nivel = 0; nivel < 6; nivel++) {
+    raizes.add(pasta);
+    pasta = pasta.parent;
+  }
+  for (final raiz in raizes) {
+    final fontes = Directory('${raiz.path}/material_fonts');
+    if (fontes.existsSync()) return fontes;
+  }
+  throw StateError(
+    'Fontes do Flutter não encontradas a partir de '
+    '${Platform.resolvedExecutable}',
+  );
+}
+
 /// O teste mede alturas de verdade: troca a fonte quadrada dos testes pela
 /// Roboto que vem com o Flutter, a mesma do app no Android.
 Future<void> _carregarRoboto() async {
-  final pasta =
-      '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
+  final arquivos = _fontesDoFlutter().listSync().whereType<File>();
   final roboto = FontLoader('Roboto');
   for (final peso in ['light', 'regular', 'medium', 'bold', 'black']) {
-    final bytes = File('$pasta/roboto-$peso.ttf').readAsBytesSync();
-    roboto.addFont(Future.value(bytes.buffer.asByteData()));
+    final nome = 'roboto-$peso.ttf';
+    final arquivo = arquivos.firstWhere(
+      (f) => f.uri.pathSegments.last.toLowerCase() == nome,
+      orElse: () => throw StateError('Fonte $nome não encontrada'),
+    );
+    roboto.addFont(Future.value(arquivo.readAsBytesSync().buffer.asByteData()));
   }
   await roboto.load();
 }
@@ -74,15 +100,6 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-mode')));
     await tester.pumpAndSettle();
     await _semRolagem(tester, 'Configurar Conta Rápida');
-
-    await tester.tap(find.text('Começar'));
-    // A partida tem cronômetro: espera a transição sem esperar a conta acabar.
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    final lista = find.byType(Scrollable).first;
-    final posicao = tester.state<ScrollableState>(lista).position;
-    expect(posicao.maxScrollExtent, 0, reason: 'Conta Rápida cabe na tela');
-    expect(posicao.physics.shouldAcceptUserOffset(posicao), isFalse);
     await _voltar(tester);
 
     await tester.tap(find.byKey(const Key('quiz-mode-math')));
@@ -97,6 +114,24 @@ void main() {
       'Perfil',
       listaKey: const PageStorageKey('aba-perfil'),
     );
+  });
+
+  testWidgets('a partida da Conta Rápida cabe na tela, com o feedback', (
+    tester,
+  ) async {
+    _celular(tester);
+    await tester.pumpWidget(TuringclidesApp(dados: DadosLocais.emMemoria()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-mode')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Começar'));
+    // Sem resposta, o cronômetro roda os 10 s e a tela para no feedback:
+    // é o momento com mais conteúdo na tela.
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pumpAndSettle();
+    expect(find.text('Tempo esgotado!'), findsOneWidget);
+    await _semRolagem(tester, 'Conta Rápida');
   });
 
   testWidgets('lista que não cabe continua rolando', (tester) async {

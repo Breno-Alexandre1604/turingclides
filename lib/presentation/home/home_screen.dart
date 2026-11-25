@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../data/dados_locais.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import '../conta_rapida/configuracao_conta_rapida_screen.dart';
 import '../progresso/player_screen.dart';
 import '../widgets/game_controls.dart';
 import 'configuration_screen.dart';
@@ -20,6 +21,15 @@ class HomeScreen extends StatelessWidget {
         settings: const RouteSettings(name: '/configuracao'),
         builder: (_) =>
             ConfigurationScreen(strategy: strategy, repository: dados),
+      ),
+    );
+  }
+
+  void _abrirContaRapida(BuildContext context) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/conta-rapida/configuracao'),
+        builder: (_) => ConfiguracaoContaRapidaScreen(dados: dados),
       ),
     );
   }
@@ -64,12 +74,13 @@ class HomeScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey.shade700, fontSize: 15),
               ),
               const SizedBox(height: 25),
-              const ModeCard(
+              ModeCard(
+                key: const Key('quick-mode'),
                 titulo: 'Conta Rápida',
-                descricao:
-                    'Aguardando integração das operações com cronômetro.',
+                descricao: 'Contas de cabeça com 10 segundos cada.',
                 icone: Icons.calculate_outlined,
                 cor: Colors.deepOrange,
+                onTap: () => _abrirContaRapida(context),
               ),
               ModeCard(
                 key: const Key('quiz-mode-math'),

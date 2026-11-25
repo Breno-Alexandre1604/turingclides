@@ -8,8 +8,10 @@ import '../../app/app_theme.dart';
 /// conteúdo centralizado com largura máxima em telas largas e espaço para a
 /// barra de gestos do Android no fim.
 ///
-/// A lista ocupa a largura toda, então o dedo rola de qualquer ponto da
-/// tela, inclusive das margens do tablet. O app usa `RolagemDoApp`.
+/// Só rola quando o conteúdo não cabe na tela (celular pequeno, teclado
+/// aberto, histórico longo). Tela que cabe fica parada: nada de rolagem ou
+/// "esticão" sem motivo. Quando rola, a lista ocupa a largura toda, então o
+/// dedo rola de qualquer ponto, inclusive das margens do tablet.
 class PaginaRolavel extends StatelessWidget {
   const PaginaRolavel({
     super.key,
@@ -41,9 +43,9 @@ class PaginaRolavel extends StatelessWidget {
         return ListView(
           key: listaKey,
           controller: controller,
-          // Desliza e estica na borda mesmo quando o conteúdo cabe na tela:
-          // o toque sempre responde.
-          physics: const AlwaysScrollableScrollPhysics(),
+          // Física da plataforma sem o "sempre rolável" que o Flutter liga
+          // por padrão na lista principal da tela: só rola se não couber.
+          physics: const ScrollPhysics(),
           keyboardDismissBehavior: fecharTecladoAoArrastar
               ? ScrollViewKeyboardDismissBehavior.onDrag
               : ScrollViewKeyboardDismissBehavior.manual,
@@ -51,7 +53,7 @@ class PaginaRolavel extends StatelessWidget {
             math.max(Espaco.l + sistema.left, sobra),
             Espaco.s,
             math.max(Espaco.l + sistema.right, sobra),
-            Espaco.xxl + sistema.bottom,
+            Espaco.xl + sistema.bottom,
           ),
           children: children,
         );

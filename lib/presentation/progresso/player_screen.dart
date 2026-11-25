@@ -487,6 +487,9 @@ class _CartaoPartida extends StatelessWidget {
     final hora = TimeOfDay.fromDateTime(momento).format(context);
     return Card(
       child: ExpansionTile(
+        // Chave própria: guarda aberto/fechado de cada partida sem misturar
+        // com a posição da rolagem que a aba guarda no mesmo PageStorage.
+        key: PageStorageKey('partida-${partida.id}'),
         shape: const Border(),
         collapsedShape: const Border(),
         tilePadding: const EdgeInsets.symmetric(

@@ -54,8 +54,9 @@ Todas ficam em `lib/app/app_theme.dart`. As telas usam esses nomes, nunca númer
 
 ## Rolagem e toque
 
-- Toda tela rola com o dedo e estica na borda, mesmo quando o conteúdo cabe na tela (efeito nativo do Android 12+).
-- Arrastar para os lados troca as abas de Perfil, Histórico e Progresso, e cada aba guarda a posição da rolagem.
+- **Sem rolagem desnecessária**: uma tela só rola quando o conteúdo não cabe nela (celular pequeno, teclado aberto, histórico longo). Home, configurações, partida da Conta Rápida e Perfil cabem num celular comum e ficam paradas. O Flutter deixa a lista principal de cada tela "sempre rolável" por padrão; `PaginaRolavel` desliga isso.
+- Quando rola, a lista usa a física nativa do Android e estica na borda (Android 12+).
+- Arrastar para os lados troca as abas de Perfil, Histórico e Progresso, e cada aba guarda a posição da rolagem. Cada partida do histórico guarda se está aberta ou fechada.
 - Arrastar a lista fecha o teclado, menos na Conta Rápida, onde um toque torto não pode esconder o campo no meio do cronômetro.
 - No simulador web, o mouse também arrasta as listas e as abas.
 - O gesto de voltar do Android mostra a prévia da tela anterior (voltar preditivo, Android 14+).
@@ -64,7 +65,10 @@ Todas ficam em `lib/app/app_theme.dart`. As telas usam esses nomes, nunca númer
 ## Como conferir
 
 ```powershell
-flutter test test/widgets/aparencia_test.dart
+flutter test test/widgets/aparencia_test.dart test/widgets/rolagem_test.dart
 ```
 
-O teste troca o tema no perfil, fecha e abre o app, confere a Home atualizando com uma partida nova e troca de aba deslizando. A conferência visual foi feita no navegador em tamanho de celular, no claro e no escuro. Ainda falta ver no celular de verdade.
+- `aparencia_test.dart` troca o tema no perfil, fecha e abre o app, confere a Home atualizando com uma partida nova e troca de aba deslizando.
+- `rolagem_test.dart` abre as telas num celular comum (393 × 851 dp) com a fonte Roboto de verdade e confere que as que cabem não rolam nem aceitam arrasto, e que um histórico longo continua rolando.
+
+A conferência visual foi feita no navegador em tamanho de celular, no claro e no escuro. Ainda falta ver no celular de verdade.

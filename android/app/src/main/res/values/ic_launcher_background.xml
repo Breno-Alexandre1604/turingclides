@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Índigo da marca, o mesmo de corDaMarca em lib/app/app_theme.dart. -->
+    <color name="ic_launcher_background">#4255D4</color>
+</resources>

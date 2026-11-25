@@ -5,7 +5,7 @@
       release, sem backup dos dados do jogador e sem tráfego HTTP em texto puro.
     -->
     <application
-        android:label="turingclides"
+        android:label="Turingclides"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

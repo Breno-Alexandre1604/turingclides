@@ -28,8 +28,8 @@ Para repetir a verificação do SQLite, conclua uma rodada e espere a mensagem *
 
 ```powershell
 $adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
-& $adb -s emulator-5554 shell am force-stop com.example.turingclides
-& $adb -s emulator-5554 shell am start -n com.example.turingclides/.MainActivity
+& $adb -s emulator-5554 shell am force-stop br.edu.unipe.turingclides
+& $adb -s emulator-5554 shell am start -n br.edu.unipe.turingclides/.MainActivity
 ```
 
 ## Roteiro de dois minutos

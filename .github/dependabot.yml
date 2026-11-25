@@ -1,0 +1,13 @@
+# Avisa toda semana quando houver versão nova das dependências do Dart/Flutter
+# e das ações usadas no CI (inclui correções de segurança).
+version: 2
+updates:
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

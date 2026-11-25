@@ -18,7 +18,7 @@ val keystoreProperties = Properties().apply {
 val temChaveDeRelease = keystorePropertiesFile.exists()
 
 android {
-    namespace = "com.example.turingclides"
+    namespace = "br.edu.unipe.turingclides"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -28,8 +28,8 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.turingclides"
+        // Identificador próprio do app (a Play Store recusa com.example).
+        applicationId = "br.edu.unipe.turingclides"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

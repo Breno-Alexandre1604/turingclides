@@ -86,7 +86,11 @@ class _ContaRapidaScreenState extends State<ContaRapidaScreen> {
       _campo.clear();
       setState(() => _resposta = null);
       _iniciarCronometro();
-      _foco.requestFocus();
+      // O campo só volta a ficar habilitado no próximo frame; pedir o foco
+      // antes disso é ignorado e o jogador teria de clicar a cada conta.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _foco.requestFocus();
+      });
       return;
     }
     _saindo = true;

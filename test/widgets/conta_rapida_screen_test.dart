@@ -61,6 +61,14 @@ void main() {
       for (var i = 2; i <= 5; i++) {
         await _tocar(tester, find.byKey(const Key('conta-proxima')));
         expect(find.text('Conta $i de 5 · Fácil'), findsOneWidget);
+        await tester.pump();
+        // O campo de resposta volta com foco: dá para digitar direto.
+        expect(
+          find.byWidgetPredicate(
+            (w) => w is EditableText && w.focusNode.hasFocus,
+          ),
+          findsOneWidget,
+        );
         await tester.pump(const Duration(seconds: 10));
         expect(find.text('Tempo esgotado!'), findsOneWidget);
       }

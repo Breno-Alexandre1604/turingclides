@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'app/app_theme.dart';
-import 'data/quiz_history_repository.dart';
+import 'data/dados_locais.dart';
 import 'presentation/home/home_screen.dart';
 
 void main() {
@@ -9,9 +9,9 @@ void main() {
 }
 
 class TuringclidesApp extends StatelessWidget {
-  const TuringclidesApp({super.key, this.repository});
+  const TuringclidesApp({super.key, this.dados});
 
-  final QuizHistoryRepository? repository;
+  final DadosLocais? dados;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class TuringclidesApp extends StatelessWidget {
       title: 'Turingclides',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: HomeScreen(repository: repository),
+      home: HomeScreen(dados: dados),
     );
   }
 }

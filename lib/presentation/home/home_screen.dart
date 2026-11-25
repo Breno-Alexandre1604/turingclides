@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../../data/quiz_history_repository.dart';
+import '../../data/dados_locais.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
 import '../progresso/player_screen.dart';
 import '../widgets/game_controls.dart';
@@ -8,16 +8,18 @@ import 'configuration_screen.dart';
 
 // Home e cartões de Leonardo com o percurso Home → configuração de Lucas.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, this.repository});
+  const HomeScreen({super.key, this.dados});
 
-  final QuizHistoryRepository? repository;
+  /// Dados do jogador. Vazio usa o banco do aparelho; os testes injetam
+  /// [DadosLocais.emMemoria].
+  final DadosLocais? dados;
 
   void _abrirConfiguracao(BuildContext context, QuizStrategy strategy) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         settings: const RouteSettings(name: '/configuracao'),
         builder: (_) =>
-            ConfigurationScreen(strategy: strategy, repository: repository),
+            ConfigurationScreen(strategy: strategy, repository: dados),
       ),
     );
   }
@@ -25,7 +27,7 @@ class HomeScreen extends StatelessWidget {
   void _abrirDados(BuildContext context, PlayerSection section) {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => PlayerScreen(section: section, repository: repository),
+        builder: (_) => PlayerScreen(section: section, dados: dados),
       ),
     );
   }

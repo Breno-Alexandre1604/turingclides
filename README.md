@@ -27,3 +27,19 @@ As questões locais ficam em `lib/domain/games/quiz_matematica/` e
 alterações depois da confirmação ficam em
 `lib/domain/games/quiz_compartilhado/`; a tela comum está em
 `lib/presentation/quizzes/`.
+
+## Documentação
+
+| Documento | Conteúdo |
+| --- | --- |
+| [Visão geral](docs/VISAO_GERAL.md) | O que é o app, quem faz cada parte, o que o jogador vê em cada tela e como as peças se conectam |
+| [Dados e progresso](docs/DADOS_E_PROGRESSO.md) | SQLite, perfil local, histórico, recordes e progresso por assunto (Renan) |
+| [Segurança do APK](docs/SEGURANCA.md) | Regras de segurança, como gerar e instalar o APK e próximas melhorias |
+| [Demonstração dos quizzes](docs/DEMONSTRACAO_QUIZZES.md) | Roteiro de apresentação dos quizzes (Breno) |
+| [Estrutura de pastas](docs/ESTRUTURA_TURINGCLIDES.md) | Onde cada arquivo deve ficar |
+
+Para gerar o APK de release com análise, testes e ofuscação:
+
+```powershell
+.\tool\gerar_apk_release.ps1
+```

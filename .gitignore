@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Segurança: chaves de assinatura e segredos nunca vão para o repositório
+key.properties
+*.jks
+*.keystore
+.env

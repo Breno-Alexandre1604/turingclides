@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:turingclides/data/quiz_history_repository.dart';
+import 'package:turingclides/data/dados_locais.dart';
 import 'package:turingclides/domain/games/quiz_compartilhado/quiz_question.dart';
 import 'package:turingclides/domain/games/quiz_compartilhado/quiz_strategy.dart';
 import 'package:turingclides/domain/games/quiz_logica/logica_question.dart';
@@ -8,16 +8,17 @@ import 'package:turingclides/domain/games/quiz_matematica/matematica_question.da
 import 'package:turingclides/domain/models/quiz_result.dart';
 import 'package:turingclides/main.dart';
 
-class _TestHistory implements QuizHistoryRepository {
+// Dados em memória (cartão D2) que também registram cada resultado recebido.
+class _TestHistory extends DadosLocais {
+  _TestHistory() : super.emMemoria();
+
   final results = <QuizResult>[];
 
   @override
   Future<void> save(QuizResult result) async {
     results.add(result);
+    await super.save(result);
   }
-
-  @override
-  Future<List<QuizResult>> all() async => List.of(results);
 }
 
 Future<void> reveal(
@@ -57,7 +58,7 @@ Future<_TestHistory> _openConfiguration(
   String modeKey,
 ) async {
   final history = _TestHistory();
-  await tester.pumpWidget(TuringclidesApp(repository: history));
+  await tester.pumpWidget(TuringclidesApp(dados: history));
   await tapVisible(tester, find.byKey(Key(modeKey)));
   expect(find.text('Configurar atividade'), findsOneWidget);
   return history;

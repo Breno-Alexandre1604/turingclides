@@ -1,12 +1,13 @@
 import '../domain/models/quiz_result.dart';
-import 'quiz_history_sqlite.dart'
-    if (dart.library.js_interop) 'quiz_history_web.dart'
-    as platform;
+import 'dados_locais.dart';
 
+/// Contrato usado pelas telas dos quizzes para gravar e ler resultados.
 /// Todas as consultas se referem ao jogador local desta instalação.
 abstract interface class QuizHistoryRepository {
   Future<void> save(QuizResult result);
   Future<List<QuizResult>> all();
 }
 
-final QuizHistoryRepository quizHistoryRepository = platform.createRepository();
+/// Implementação padrão: os dados locais da frente Dados e progresso
+/// (SQLite no Android, localStorage no navegador).
+QuizHistoryRepository get quizHistoryRepository => dadosLocais;

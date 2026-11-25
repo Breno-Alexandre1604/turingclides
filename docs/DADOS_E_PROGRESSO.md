@@ -129,7 +129,7 @@ Nada muda. A tela de resultado continua chamando `repository.save(result)` com o
 
 ### Conta Rápida (Eduardo)
 
-Ao terminar a partida, monte uma `Partida` e registre:
+Já integrada na `release/v1.0.0`: `RodadaContaRapida.finalizar` monta a `Partida` e a tela de resultado registra com `registrarPartida`. Se Eduardo trouxer outra implementação, o contrato é este:
 
 ```dart
 final jogador = await dadosLocais.perfil.obterJogadorAtual();
@@ -207,6 +207,6 @@ flutter test
 ## Limitações e próximos passos
 
 - **Questões e conceitos no SQLite**: o UML prevê `RepositorioDeQuestoes` e `RepositorioDeConceitos`. Hoje as questões estão no código de Breno. Para mover, crie as tabelas `questao`, `alternativa` e `conceito` em uma migração v3, carregue o conteúdo inicial sem duplicar e faça o `SorteadorDeQuestoes` ler pelo contrato.
-- **Conta Rápida**: o modelo já aceita `operacoes` e `tempoPorQuestao`. Falta Eduardo enviar as partidas.
+- **Conta Rápida**: integrada; grava `operacoes` (SOMA, SUBTRACAO...) e `tempoPorQuestao` (10 s). Os tópicos do progresso são as operações.
 - **Vários perfis no mesmo aparelho**: o modelo usa `jogador_id` em todas as tabelas. Trocar o id fixo por uma escolha de perfil não exige mudar o esquema.
 - **Ranking online**: exigiria servidor e validação da pontuação no servidor (veja [Segurança](SEGURANCA.md)).

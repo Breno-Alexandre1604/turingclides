@@ -1,14 +1,19 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/app_theme.dart';
+import '../../app/controle_de_tema.dart';
 import '../../data/dados_locais.dart';
 import '../../domain/models/apelido.dart';
 import '../../domain/models/jogador.dart';
 import '../../domain/models/partida.dart';
 import '../../domain/models/progresso_topico.dart';
+import '../widgets/game_controls.dart';
+import '../widgets/pagina.dart';
 
+/// Abas da tela do jogador, na ordem em que aparecem.
 enum PlayerSection {
-  history('Histórico'),
   profile('Perfil'),
+  history('Histórico'),
   progress('Progresso');
 
   const PlayerSection(this.title);
@@ -29,10 +34,12 @@ class _DadosDaTela {
   final List<ProgressoTopico> progresso;
 }
 
-/// Perfil, histórico e progresso por assunto (cartão D4).
+/// Perfil, histórico e progresso por assunto (cartão D4), em abas que o
+/// jogador troca deslizando o dedo para os lados.
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key, required this.section, this.dados});
 
+  /// Aba aberta primeiro.
   final PlayerSection section;
 
   /// Vazio usa o banco do aparelho.
@@ -92,24 +99,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Future<void> _apagarDados() async {
     final confirmou = await showDialog<bool>(
       context: context,
-      builder: (dialogo) => AlertDialog(
-        title: const Text('Apagar meus dados?'),
-        content: const Text(
-          'Apaga o apelido, as partidas, os recordes e o progresso guardados '
-          'neste aparelho. Não é possível desfazer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogo).pop(false),
-            child: const Text('Cancelar'),
+      builder: (dialogo) {
+        final esquema = Theme.of(dialogo).colorScheme;
+        return AlertDialog(
+          icon: Icon(Icons.delete_outline_rounded, color: esquema.error),
+          title: const Text('Apagar meus dados?'),
+          content: const Text(
+            'Apaga o apelido, as partidas, os recordes e o progresso guardados '
+            'neste aparelho. Não é possível desfazer.',
           ),
-          FilledButton(
-            key: const Key('confirm-delete-data'),
-            onPressed: () => Navigator.of(dialogo).pop(true),
-            child: const Text('Apagar'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogo).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              key: const Key('confirm-delete-data'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(64, 40),
+                backgroundColor: esquema.error,
+                foregroundColor: esquema.onError,
+              ),
+              onPressed: () => Navigator.of(dialogo).pop(true),
+              child: const Text('Apagar'),
+            ),
+          ],
+        );
+      },
     );
     if (confirmou != true || !mounted) return;
     try {
@@ -122,57 +138,88 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
   }
 
+  Future<void> _escolherTema(ControleDeTema controle, ThemeMode modo) async {
+    final salvo = await controle.escolher(modo);
+    if (!salvo && mounted) {
+      _avisar('Não foi possível guardar o tema. Ele vale até fechar o app.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(widget.section.title)),
-      body: FutureBuilder<_DadosDaTela>(
-        future: _carregamento,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            // A mensagem técnica do erro nunca aparece para o jogador.
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Não foi possível ler os seus dados.'),
-                  TextButton(
-                    onPressed: _recarregar,
-                    child: const Text('Tentar novamente'),
+    return DefaultTabController(
+      length: PlayerSection.values.length,
+      initialIndex: widget.section.index,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Seus dados'),
+          bottom: TabBar(
+            tabs: [
+              for (final secao in PlayerSection.values) Tab(text: secao.title),
+            ],
+          ),
+        ),
+        body: FutureBuilder<_DadosDaTela>(
+          future: _carregamento,
+          builder: (context, snapshot) {
+            final dados = snapshot.data;
+            if (dados == null) {
+              if (snapshot.hasError) {
+                // A mensagem técnica do erro nunca aparece para o jogador.
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Não foi possível ler os seus dados.'),
+                      const SizedBox(height: Espaco.xs),
+                      TextButton(
+                        onPressed: _recarregar,
+                        child: const Text('Tentar novamente'),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            }
+            return TabBarView(
+              children: [
+                PaginaRolavel(
+                  listaKey: const PageStorageKey('aba-perfil'),
+                  children: _perfil(context, dados),
+                ),
+                PaginaRolavel(
+                  listaKey: const PageStorageKey('aba-historico'),
+                  children: _historico(dados),
+                ),
+                PaginaRolavel(
+                  listaKey: const PageStorageKey('aba-progresso'),
+                  children: _progresso(context, dados),
+                ),
+              ],
             );
-          }
-          final dados = snapshot.requireData;
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: switch (widget.section) {
-                  PlayerSection.history => _historico(dados),
-                  PlayerSection.profile => _perfil(context, dados),
-                  PlayerSection.progress => _progresso(context, dados),
-                },
-              ),
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
 
   List<Widget> _historico(_DadosDaTela dados) => [
     if (dados.partidas.isEmpty)
-      const _Vazio('Nenhuma partida concluída ainda.'),
-    for (final partida in dados.partidas) _CartaoPartida(partida: partida),
+      const AvisoVazio(
+        'Nenhuma partida concluída ainda.',
+        icone: Icons.history_rounded,
+      ),
+    for (final partida in dados.partidas) ...[
+      _CartaoPartida(partida: partida),
+      const SizedBox(height: Espaco.s),
+    ],
   ];
 
   List<Widget> _perfil(BuildContext context, _DadosDaTela dados) {
+    final tema = Theme.of(context);
+    final esquema = tema.colorScheme;
+    final cores = CoresDoApp.of(context);
     final jogador = dados.jogador;
     final respondidas = dados.progresso.fold(
       0,
@@ -180,58 +227,161 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
     final acertos = dados.progresso.fold(0, (soma, p) => soma + p.totalAcertos);
     final inicial = jogador.apelido.characters.first.toUpperCase();
+    final controleDeTema = TemaEscolhido.maybeOf(context);
+    final secundario = tema.textTheme.bodyMedium?.copyWith(
+      color: esquema.onSurfaceVariant,
+      fontFeatures: numerosTabulares,
+    );
+
     return [
       Card(
-        child: ListTile(
-          leading: CircleAvatar(child: Text(inicial)),
-          title: Text(
-            jogador.apelido,
-            key: const Key('player-nickname'),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            '${jogador.pontosTotais} pontos • '
-            '${dados.partidas.length} partida(s)',
-            key: const Key('player-points'),
-          ),
-          trailing: IconButton(
-            key: const Key('edit-nickname'),
-            tooltip: 'Editar apelido',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _editarApelido(jogador),
+        child: Padding(
+          padding: const EdgeInsets.all(Espaco.m),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: esquema.primaryContainer,
+                    foregroundColor: esquema.onPrimaryContainer,
+                    child: Text(
+                      inicial,
+                      style: tema.textTheme.titleLarge?.copyWith(
+                        color: esquema.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.m),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          jogador.apelido,
+                          key: const Key('player-nickname'),
+                          style: tema.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: Espaco.xxs),
+                        Text(
+                          '${milhar(jogador.pontosTotais)} pontos • '
+                          '${dados.partidas.length} partida(s)',
+                          key: const Key('player-points'),
+                          style: secundario,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    key: const Key('edit-nickname'),
+                    tooltip: 'Editar apelido',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _editarApelido(jogador),
+                  ),
+                ],
+              ),
+              if (respondidas > 0) ...[
+                const SizedBox(height: Espaco.m),
+                const Divider(),
+                const SizedBox(height: Espaco.m),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$acertos de $respondidas respostas corretas',
+                        style: tema.textTheme.bodyMedium,
+                      ),
+                    ),
+                    Text(
+                      '${porcento(acertos / respondidas)} de acerto geral',
+                      style: secundario,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Espaco.xs),
+                LinearProgressIndicator(
+                  value: acertos / respondidas,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ],
+            ],
           ),
         ),
       ),
-      if (respondidas > 0)
-        ListTile(
-          leading: const Icon(Icons.check_circle_outline),
-          title: Text('$acertos de $respondidas respostas corretas'),
-          subtitle: Text('${_porcento(acertos / respondidas)} de acerto geral'),
-        ),
-      const SizedBox(height: 8),
-      Text('Recordes por modo', style: Theme.of(context).textTheme.titleMedium),
+      const TituloDeSecao('Recordes por modo'),
       if (dados.recordes.isEmpty)
-        const _Vazio(
+        const AvisoVazio(
           'Conclua uma partida para registrar seu primeiro recorde.',
+          icone: Icons.emoji_events_outlined,
+        )
+      else
+        Card(
+          child: Column(
+            children: [
+              for (final MapEntry(key: modo, value: pontos)
+                  in dados.recordes.entries)
+                ListTile(
+                  leading: IconeDoModo(
+                    icone: iconeDoModo(modo),
+                    cores: cores.doModo(modo),
+                    tamanho: 40,
+                  ),
+                  title: Text(modo),
+                  trailing: Text(
+                    '${milhar(pontos)} pts',
+                    style: tema.textTheme.titleMedium?.copyWith(
+                      fontFeatures: numerosTabulares,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      for (final MapEntry(key: modo, value: pontos) in dados.recordes.entries)
-        ListTile(
-          leading: const Icon(Icons.emoji_events_outlined),
-          title: Text(modo),
-          trailing: Text('$pontos pts'),
+      if (controleDeTema != null) ...[
+        const TituloDeSecao('Aparência'),
+        SegmentedButton<ThemeMode>(
+          key: const Key('tema-escolha'),
+          expandedInsets: EdgeInsets.zero,
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(
+              value: ThemeMode.system,
+              icon: Icon(Icons.brightness_auto_outlined),
+              label: Text('Sistema'),
+            ),
+            ButtonSegment(
+              value: ThemeMode.light,
+              icon: Icon(Icons.light_mode_outlined),
+              label: Text('Claro'),
+            ),
+            ButtonSegment(
+              value: ThemeMode.dark,
+              icon: Icon(Icons.dark_mode_outlined),
+              label: Text('Escuro'),
+            ),
+          ],
+          selected: {controleDeTema.value},
+          onSelectionChanged: (escolha) =>
+              _escolherTema(controleDeTema, escolha.single),
         ),
-      const Divider(height: 32),
+      ],
+      const TituloDeSecao('Privacidade'),
       Text(
         'Seus dados ficam só neste aparelho. O app não envia nada para a '
         'internet e não pede seu nome real: use um apelido.',
-        style: TextStyle(color: Colors.grey.shade700),
+        style: tema.textTheme.bodyMedium?.copyWith(
+          color: esquema.onSurfaceVariant,
+        ),
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: Espaco.s),
       OutlinedButton.icon(
         key: const Key('delete-data'),
-        style: OutlinedButton.styleFrom(foregroundColor: Colors.red.shade700),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: esquema.error,
+          side: BorderSide(color: esquema.error.withValues(alpha: 0.5)),
+        ),
         onPressed: _apagarDados,
-        icon: const Icon(Icons.delete_outline),
+        icon: const Icon(Icons.delete_outline_rounded),
         label: const Text('Apagar meus dados'),
       ),
     ];
@@ -240,53 +390,87 @@ class _PlayerScreenState extends State<PlayerScreen> {
   List<Widget> _progresso(BuildContext context, _DadosDaTela dados) {
     if (dados.progresso.isEmpty) {
       return const [
-        _Vazio('Conclua uma partida para ver seus acertos por assunto.'),
+        AvisoVazio(
+          'Conclua uma partida para ver seus acertos por assunto.',
+          icone: Icons.trending_up_rounded,
+        ),
       ];
     }
     final porModo = <String, List<ProgressoTopico>>{};
     for (final item in dados.progresso) {
       porModo.putIfAbsent(item.modo, () => []).add(item);
     }
+    final cores = CoresDoApp.of(context);
+    final grupos = porModo.entries.toList();
     return [
-      for (final MapEntry(key: modo, value: topicos) in porModo.entries) ...[
-        Padding(
-          padding: const EdgeInsets.only(top: 12, bottom: 4),
-          child: Text(modo, style: Theme.of(context).textTheme.titleMedium),
-        ),
-        for (final topico in topicos)
-          ListTile(
-            title: Text(topico.topico),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 6),
-                LinearProgressIndicator(value: topico.taxaDeAcerto),
-                const SizedBox(height: 4),
-                Text(
-                  '${topico.totalAcertos} de ${topico.totalRespondidas} '
-                  'respostas corretas',
+      for (var g = 0; g < grupos.length; g++) ...[
+        TituloDeSecao(grupos[g].key, primeiro: g == 0),
+        Card(
+          child: Column(
+            children: [
+              for (final (i, topico) in grupos[g].value.indexed) ...[
+                if (i > 0) const Divider(indent: Espaco.m, endIndent: Espaco.m),
+                _LinhaDeTopico(
+                  topico: topico,
+                  cores: cores.doModo(grupos[g].key),
                 ),
               ],
-            ),
-            trailing: Text(_porcento(topico.taxaDeAcerto)),
+            ],
           ),
+        ),
       ],
     ];
   }
 }
 
-String _porcento(double taxa) => '${(taxa * 100).round()}%';
+class _LinhaDeTopico extends StatelessWidget {
+  const _LinhaDeTopico({required this.topico, required this.cores});
 
-class _Vazio extends StatelessWidget {
-  const _Vazio(this.texto);
-
-  final String texto;
+  final ProgressoTopico topico;
+  final CorDeModo cores;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Text(texto),
-  );
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(Espaco.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(topico.topico, style: tema.textTheme.titleSmall),
+              ),
+              const SizedBox(width: Espaco.s),
+              Text(
+                porcento(topico.taxaDeAcerto),
+                style: tema.textTheme.titleSmall?.copyWith(
+                  color: cores.cor,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: numerosTabulares,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Espaco.xs),
+          LinearProgressIndicator(
+            value: topico.taxaDeAcerto,
+            color: cores.cor,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          const SizedBox(height: Espaco.xs),
+          Text(
+            '${topico.totalAcertos} de ${topico.totalRespondidas} '
+            'respostas corretas',
+            style: tema.textTheme.bodySmall?.copyWith(
+              color: tema.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _CartaoPartida extends StatelessWidget {
@@ -296,31 +480,56 @@ class _CartaoPartida extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final cores = CoresDoApp.of(context);
     final momento = partida.finalizadaEm.toLocal();
     final data = MaterialLocalizations.of(context).formatShortDate(momento);
     final hora = TimeOfDay.fromDateTime(momento).format(context);
     return Card(
       child: ExpansionTile(
-        title: Text('${partida.modo} • ${partida.pontuacao} pts'),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: Espaco.m,
+          vertical: Espaco.xxs,
+        ),
+        leading: IconeDoModo(
+          icone: iconeDoModo(partida.modo),
+          cores: cores.doModo(partida.modo),
+          tamanho: 40,
+        ),
+        title: Text(
+          '${partida.modo} • ${milhar(partida.pontuacao)} pts',
+          style: tema.textTheme.titleSmall,
+        ),
         subtitle: Text(
           '${partida.dificuldade} • $data, $hora\n'
           '${partida.acertos}/${partida.qtdQuestoes} acertos',
         ),
         children: [
+          const Divider(),
           for (final resposta in partida.respostas)
             ListTile(
               leading: Icon(
-                resposta.correta ? Icons.check_circle : Icons.cancel,
-                color: resposta.correta ? Colors.green : Colors.red,
+                resposta.correta
+                    ? Icons.check_circle_rounded
+                    : Icons.cancel_rounded,
+                color: resposta.correta
+                    ? cores.acerto.cor
+                    : tema.colorScheme.error,
               ),
               title: Text(resposta.enunciado),
               subtitle: Text(
-                'Sua resposta: ${resposta.respostaDada}\n'
+                'Sua resposta: ${resposta.respostaDada.isEmpty ? 'sem resposta' : resposta.respostaDada}\n'
                 'Gabarito: ${resposta.respostaCorreta}'
                 '${resposta.usouDica ? '\nUsou dica' : ''}',
               ),
-              trailing: Text('+${resposta.pontos}'),
+              trailing: Text(
+                '+${resposta.pontos}',
+                style: const TextStyle(fontFeatures: numerosTabulares),
+              ),
             ),
+          const SizedBox(height: Espaco.xs),
         ],
       ),
     );
@@ -382,6 +591,7 @@ class _DialogoApelidoState extends State<_DialogoApelido> {
         ),
         FilledButton(
           key: const Key('save-nickname'),
+          style: FilledButton.styleFrom(minimumSize: const Size(64, 40)),
           onPressed: _confirmar,
           child: const Text('Salvar'),
         ),

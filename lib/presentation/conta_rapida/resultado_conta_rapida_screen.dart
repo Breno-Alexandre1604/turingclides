@@ -2,9 +2,12 @@ import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/app_theme.dart';
 import '../../data/dados_locais.dart';
 import '../../domain/games/conta_rapida/conta_rapida.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import '../widgets/pagina.dart';
+import '../widgets/resultado.dart';
 import 'configuracao_conta_rapida_screen.dart';
 
 /// Resultado da Conta Rápida, gravado pela frente Dados e progresso
@@ -72,83 +75,110 @@ class _ResultadoContaRapidaScreenState
   Widget build(BuildContext context) {
     final rodada = widget.rodada;
     final salvando = _gravacao == _Gravacao.salvando;
+    final tema = Theme.of(context);
+    final cores = CoresDoApp.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Resultado')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: ListView(
-            padding: const EdgeInsets.all(24),
+      body: PaginaRolavel(
+        larguraMaxima: Largura.jogo,
+        children: [
+          const SizedBox(height: Espaco.m),
+          Center(
+            child: CircleAvatar(
+              radius: 44,
+              backgroundColor: cores.contaRapida.fundo,
+              child: Icon(
+                Icons.bolt_rounded,
+                size: 48,
+                color: cores.contaRapida.sobreFundo,
+              ),
+            ),
+          ),
+          const SizedBox(height: Espaco.m),
+          Text(
+            'Conta Rápida concluída!',
+            textAlign: TextAlign.center,
+            style: tema.textTheme.headlineSmall,
+          ),
+          const SizedBox(height: Espaco.xl),
+          ResumoDoResultado(
+            linhas: [
+              '${rodada.acertos} de ${rodada.quantidade} acertos · '
+                  '${rodada.nivel.label}',
+            ],
+            pontuacao: 'Pontuação: ${rodada.pontos} pontos',
+            pontuacaoKey: const Key('conta-total'),
+          ),
+          const SizedBox(height: Espaco.m),
+          switch (_gravacao) {
+            _Gravacao.salvando => const EstadoDoSalvamento.salvando(),
+            _Gravacao.salva => const EstadoDoSalvamento.salvo(),
+            _Gravacao.falhou => EstadoDoSalvamento.falhou(
+              tentarDeNovo: _tentarDeNovo,
+            ),
+          },
+          const TituloDeSecao('Contas da partida'),
+          Card(
+            child: Column(
+              children: [
+                for (final r in rodada.respostas)
+                  ListTile(
+                    leading: Icon(
+                      r.correta
+                          ? Icons.check_circle_rounded
+                          : Icons.cancel_rounded,
+                      color: r.correta
+                          ? cores.acerto.cor
+                          : tema.colorScheme.error,
+                    ),
+                    title: Text(
+                      '${r.conta.enunciado} = ${r.conta.resultado}',
+                      style: const TextStyle(fontFeatures: numerosTabulares),
+                    ),
+                    subtitle: Text(
+                      r.tempoEsgotado
+                          ? 'Tempo esgotado'
+                          : 'Sua resposta: ${r.entrada} · '
+                                '${(r.tempo.inMilliseconds / 1000).toStringAsFixed(1)} s',
+                    ),
+                    trailing: Text(
+                      '+${r.pontos}',
+                      style: tema.textTheme.titleSmall?.copyWith(
+                        fontFeatures: numerosTabulares,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Espaco.xl),
+          Row(
             children: [
-              const Icon(Icons.bolt, size: 64, color: Colors.deepOrange),
-              const SizedBox(height: 12),
-              Text(
-                'Conta Rápida concluída!',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '${rodada.acertos} de ${rodada.quantidade} acertos · '
-                '${rodada.nivel.label}',
-              ),
-              Text(
-                'Pontuação: ${rodada.pontos} pontos',
-                key: const Key('conta-total'),
-              ),
-              const SizedBox(height: 12),
-              switch (_gravacao) {
-                _Gravacao.salvando => const Text('Salvando partida…'),
-                _Gravacao.salva => const Text('Partida salva no histórico.'),
-                _Gravacao.falhou => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Não foi possível confirmar o salvamento da partida.',
-                    ),
-                    TextButton(
-                      onPressed: _tentarDeNovo,
-                      child: const Text('Tentar salvar novamente'),
-                    ),
-                  ],
-                ),
-              },
-              const Divider(height: 32),
-              for (final r in rodada.respostas)
-                ListTile(
-                  dense: true,
-                  leading: Icon(
-                    r.correta ? Icons.check_circle : Icons.cancel,
-                    color: r.correta ? Colors.green : Colors.red,
+              Expanded(
+                child: OutlinedButton(
+                  key: const Key('conta-jogar-de-novo'),
+                  onPressed: salvando ? null : _jogarDeNovo,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(64, 52),
                   ),
-                  title: Text('${r.conta.enunciado} = ${r.conta.resultado}'),
-                  subtitle: Text(
-                    r.tempoEsgotado
-                        ? 'Tempo esgotado'
-                        : 'Sua resposta: ${r.entrada} · '
-                              '${(r.tempo.inMilliseconds / 1000).toStringAsFixed(1)} s',
-                  ),
-                  trailing: Text('+${r.pontos}'),
+                  child: const Text('Jogar de novo'),
                 ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                key: const Key('conta-jogar-de-novo'),
-                onPressed: salvando ? null : _jogarDeNovo,
-                child: const Text('Jogar de novo'),
               ),
-              const SizedBox(height: 8),
-              FilledButton(
-                key: const Key('conta-inicio'),
-                onPressed: salvando
-                    ? null
-                    : () =>
-                          Navigator.of(context)
-                              .popUntil((route) => route.isFirst),
-                child: const Text('Voltar ao início'),
+              const SizedBox(width: Espaco.s),
+              Expanded(
+                child: FilledButton(
+                  key: const Key('conta-inicio'),
+                  onPressed: salvando
+                      ? null
+                      : () =>
+                            Navigator.of(context)
+                                .popUntil((route) => route.isFirst),
+                  child: const Text('Voltar ao início'),
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,11 +2,13 @@ import 'dart:math';
 
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/app_theme.dart';
 import '../../data/dados_locais.dart';
 import '../../domain/games/conta_rapida/conta_rapida.dart';
 import '../../domain/games/quiz_compartilhado/quiz_question.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
 import '../widgets/game_controls.dart';
+import '../widgets/pagina.dart';
 import 'conta_rapida_screen.dart';
 
 /// Escolha de operações, nível e quantidade de contas (cartão C1).
@@ -60,77 +62,85 @@ class _ConfiguracaoContaRapidaScreenState
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final cores = CoresDoApp.of(context).contaRapida;
     return Scaffold(
       appBar: AppBar(title: const Text('Configurar Conta Rápida')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 680),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+      body: PaginaRolavel(
+        children: [
+          Row(
             children: [
-              const Text(
-                'Conta Rápida',
-                style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+              IconeDoModo(
+                icone: iconeDoModo(RodadaContaRapida.modo),
+                cores: cores,
+                tamanho: 48,
               ),
-              const SizedBox(height: 6),
-              Text(
-                'Resolva de cabeça. Cada conta tem '
-                '${RodadaContaRapida.limite.inSeconds} segundos.',
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 24),
-              const Text('Operações'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final operacao in Operacao.values)
-                    FilterChip(
-                      key: Key('operacao-${operacao.name}'),
-                      label: Text('${operacao.simbolo}  ${operacao.nome}'),
-                      selected: _operacoes.contains(operacao),
-                      onSelected: (marcada) => _alternar(operacao, marcada),
+              const SizedBox(width: Espaco.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Conta Rápida', style: tema.textTheme.headlineSmall),
+                    const SizedBox(height: Espaco.xxs),
+                    Text(
+                      'Resolva de cabeça. Cada conta tem '
+                      '${RodadaContaRapida.limite.inSeconds} segundos.',
+                      style: tema.textTheme.bodyMedium?.copyWith(
+                        color: tema.colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              DropdownButtonFormField<QuizDifficulty>(
-                key: const Key('conta-nivel'),
-                initialValue: _nivel,
-                decoration: const InputDecoration(
-                  labelText: 'Dificuldade',
-                  border: OutlineInputBorder(),
+                  ],
                 ),
-                items: [
-                  for (final nivel in QuizDifficulty.values)
-                    DropdownMenuItem(value: nivel, child: Text(nivel.label)),
-                ],
-                onChanged: (nivel) {
-                  if (nivel != null) setState(() => _nivel = nivel);
-                },
               ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<int>(
-                key: const Key('conta-quantidade'),
-                initialValue: _quantidade,
-                decoration: const InputDecoration(
-                  labelText: 'Quantidade de contas',
-                  border: OutlineInputBorder(),
-                ),
-                items: [
-                  for (final n in const [5, 10, 15])
-                    DropdownMenuItem(value: n, child: Text('$n contas')),
-                ],
-                onChanged: (n) {
-                  if (n != null) setState(() => _quantidade = n);
-                },
-              ),
-              const SizedBox(height: 28),
-              PrimaryButton(texto: 'Começar', onPressed: _comecar),
             ],
           ),
-        ),
+          const TituloDeSecao('Operações'),
+          Wrap(
+            spacing: Espaco.xs,
+            runSpacing: Espaco.xs,
+            children: [
+              for (final operacao in Operacao.values)
+                FilterChip(
+                  key: Key('operacao-${operacao.name}'),
+                  label: Text('${operacao.simbolo}  ${operacao.nome}'),
+                  selected: _operacoes.contains(operacao),
+                  selectedColor: cores.fundo,
+                  checkmarkColor: cores.sobreFundo,
+                  onSelected: (marcada) => _alternar(operacao, marcada),
+                ),
+            ],
+          ),
+          const SizedBox(height: Espaco.xl),
+          DropdownButtonFormField<QuizDifficulty>(
+            key: const Key('conta-nivel'),
+            initialValue: _nivel,
+            decoration: const InputDecoration(labelText: 'Dificuldade'),
+            items: [
+              for (final nivel in QuizDifficulty.values)
+                DropdownMenuItem(value: nivel, child: Text(nivel.label)),
+            ],
+            onChanged: (nivel) {
+              if (nivel != null) setState(() => _nivel = nivel);
+            },
+          ),
+          const SizedBox(height: Espaco.m),
+          DropdownButtonFormField<int>(
+            key: const Key('conta-quantidade'),
+            initialValue: _quantidade,
+            decoration: const InputDecoration(
+              labelText: 'Quantidade de contas',
+            ),
+            items: [
+              for (final n in const [5, 10, 15])
+                DropdownMenuItem(value: n, child: Text('$n contas')),
+            ],
+            onChanged: (n) {
+              if (n != null) setState(() => _quantidade = n);
+            },
+          ),
+          const SizedBox(height: Espaco.xl),
+          PrimaryButton(texto: 'Começar', onPressed: _comecar),
+        ],
       ),
     );
   }

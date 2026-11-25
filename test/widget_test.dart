@@ -126,11 +126,15 @@ void main() {
       expect(find.textContaining('Saída: 10'), findsOneWidget);
       await tapVisible(tester, find.byKey(const Key('trace-previous')));
       expect(find.textContaining('total 7 → 10'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(
+        find.byType(BackButton),
+      ); // o app está em pt-BR: o rótulo é "Voltar"
       await tester.pumpAndSettle();
       await tapVisible(tester, viewExecution);
       expect(find.textContaining('total 0 → 3'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(
+        find.byType(BackButton),
+      ); // o app está em pt-BR: o rótulo é "Voltar"
       await tester.pumpAndSettle();
 
       await tapVisible(

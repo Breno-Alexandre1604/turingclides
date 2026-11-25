@@ -4,9 +4,12 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/app_theme.dart';
 import '../../data/dados_locais.dart';
 import '../../domain/games/conta_rapida/conta_rapida.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import '../widgets/game_controls.dart';
+import '../widgets/pagina.dart';
 import 'resultado_conta_rapida_screen.dart';
 
 /// Partida de Conta Rápida com cronômetro de 10 segundos (cartões C2 e C3).
@@ -113,99 +116,117 @@ class _ContaRapidaScreenState extends State<ContaRapidaScreen> {
     final restante = (_totalPassos - _passos).clamp(0, _totalPassos);
     final segundos = (restante * _passo.inMilliseconds / 1000).ceil();
     final tema = Theme.of(context);
+    final esquema = tema.colorScheme;
+    final cores = CoresDoApp.of(context);
+    // Nos 3 segundos finais a barra e o relógio passam para a cor de erro.
+    final acabando = resposta == null && segundos <= 3;
+    final corDoTempo = acabando ? esquema.error : cores.contaRapida.cor;
     return Scaffold(
       appBar: AppBar(title: const Text('Conta Rápida')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
+      body: PaginaRolavel(
+        larguraMaxima: Largura.jogo,
+        fecharTecladoAoArrastar: false,
+        children: [
+          CabecalhoDaPartida(
+            posicao:
                 'Conta ${_rodada.numero} de ${_rodada.quantidade} · '
                 '${_rodada.nivel.label}',
-              ),
-              Text('${_rodada.pontos} pontos', key: const Key('conta-pontos')),
-              const SizedBox(height: 16),
-              LinearProgressIndicator(
-                key: const Key('conta-cronometro'),
-                value: resposta == null ? restante / _totalPassos : 0,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              const SizedBox(height: 4),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(resposta == null ? '$segundos s' : ''),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                conta.enunciado,
-                key: const Key('conta-enunciado'),
-                textAlign: TextAlign.center,
-                style: tema.textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+            pontos: '${_rodada.pontos} pontos',
+            pontosKey: const Key('conta-pontos'),
+            atual: _rodada.numero,
+            total: _rodada.quantidade,
+            cores: cores.contaRapida,
+          ),
+          const SizedBox(height: Espaco.xl),
+          Row(
+            children: [
+              Icon(Icons.timer_outlined, size: 20, color: corDoTempo),
+              const SizedBox(width: Espaco.xs),
+              Expanded(
+                child: LinearProgressIndicator(
+                  key: const Key('conta-cronometro'),
+                  value: resposta == null ? restante / _totalPassos : 0,
+                  color: corDoTempo,
+                  minHeight: 10,
+                  borderRadius: BorderRadius.circular(5),
+                  semanticsLabel: 'Tempo restante',
                 ),
               ),
-              const SizedBox(height: 24),
-              TextField(
-                key: const Key('conta-resposta'),
-                controller: _campo,
-                focusNode: _foco,
-                autofocus: true,
-                enabled: resposta == null,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                style: tema.textTheme.headlineMedium,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(6),
-                ],
-                decoration: const InputDecoration(
-                  labelText: 'Sua resposta',
-                  border: OutlineInputBorder(),
-                ),
-                onSubmitted: (_) => _responder(),
-              ),
-              const SizedBox(height: 16),
-              if (resposta == null)
-                FilledButton(
-                  key: const Key('conta-responder'),
-                  onPressed: _campo.text.trim().isEmpty ? null : _responder,
-                  child: const Text('Responder'),
-                )
-              else ...[
-                Card(
-                  key: const Key('conta-feedback'),
-                  color: resposta.correta
-                      ? tema.colorScheme.primaryContainer
-                      : tema.colorScheme.errorContainer,
-                  child: ListTile(
-                    leading: Icon(
-                      resposta.correta
-                          ? Icons.check_circle
-                          : resposta.tempoEsgotado
-                          ? Icons.timer_off
-                          : Icons.cancel,
-                    ),
-                    title: Text(FeedbackRapido.titulo(resposta)),
-                    subtitle: Text(FeedbackRapido.detalhe(resposta)),
+              const SizedBox(width: Espaco.s),
+              SizedBox(
+                width: 40,
+                child: Text(
+                  resposta == null ? '$segundos s' : '',
+                  textAlign: TextAlign.end,
+                  style: tema.textTheme.titleSmall?.copyWith(
+                    color: corDoTempo,
+                    fontFeatures: numerosTabulares,
                   ),
                 ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  key: Key(
-                    _rodada.ultima ? 'conta-finalizar' : 'conta-proxima',
-                  ),
-                  onPressed: _continuar,
-                  child: Text(
-                    _rodada.ultima ? 'Ver resultado' : 'Próxima conta',
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
-        ),
+          const SizedBox(height: Espaco.xxxl),
+          Text(
+            conta.enunciado,
+            key: const Key('conta-enunciado'),
+            textAlign: TextAlign.center,
+            style: tema.textTheme.displayMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontFeatures: numerosTabulares,
+            ),
+          ),
+          const SizedBox(height: Espaco.xxl),
+          TextField(
+            key: const Key('conta-resposta'),
+            controller: _campo,
+            focusNode: _foco,
+            autofocus: true,
+            enabled: resposta == null,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: tema.textTheme.headlineMedium?.copyWith(
+              fontFeatures: numerosTabulares,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(6),
+            ],
+            decoration: const InputDecoration(labelText: 'Sua resposta'),
+            onSubmitted: (_) => _responder(),
+          ),
+          const SizedBox(height: Espaco.m),
+          if (resposta == null)
+            FilledButton(
+              key: const Key('conta-responder'),
+              onPressed: _campo.text.trim().isEmpty ? null : _responder,
+              child: const Text('Responder'),
+            )
+          else ...[
+            CartaoDeAviso(
+              key: const Key('conta-feedback'),
+              titulo: FeedbackRapido.titulo(resposta),
+              conteudo: FeedbackRapido.detalhe(resposta),
+              icone: resposta.correta
+                  ? Icons.check_circle_rounded
+                  : resposta.tempoEsgotado
+                  ? Icons.timer_off_rounded
+                  : Icons.cancel_rounded,
+              fundo: resposta.correta
+                  ? cores.acerto.fundo
+                  : esquema.errorContainer,
+              sobreFundo: resposta.correta
+                  ? cores.acerto.sobreFundo
+                  : esquema.onErrorContainer,
+            ),
+            const SizedBox(height: Espaco.s),
+            FilledButton(
+              key: Key(_rodada.ultima ? 'conta-finalizar' : 'conta-proxima'),
+              onPressed: _continuar,
+              child: Text(_rodada.ultima ? 'Ver resultado' : 'Próxima conta'),
+            ),
+          ],
+        ],
       ),
     );
   }

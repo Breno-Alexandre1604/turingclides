@@ -101,7 +101,9 @@ void main() {
     await _tocar(tester, find.byKey(const Key('operacao-divisao')));
     await _tocar(tester, find.text('Começar'));
     await tester.pump(const Duration(seconds: 2));
-    await tester.pageBack();
+    await tester.tap(
+      find.byType(BackButton),
+    ); // o app está em pt-BR: o rótulo é "Voltar"
     await tester.pumpAndSettle();
     expect(find.text('Aprenda jogando!'), findsOneWidget);
 

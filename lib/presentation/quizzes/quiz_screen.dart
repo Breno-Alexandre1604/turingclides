@@ -1,9 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../../app/app_theme.dart';
 import '../../application/partida_controller.dart';
 import '../../data/quiz_history_repository.dart';
 import '../../domain/games/quiz_compartilhado/quiz_question.dart';
 import '../../domain/games/quiz_compartilhado/quiz_strategy.dart';
+import '../widgets/game_controls.dart';
+import '../widgets/pagina.dart';
 import 'quiz_execution_screen.dart';
 import 'quiz_result_screen.dart';
 
@@ -64,100 +67,100 @@ class _QuizScreenState extends State<QuizScreen> {
     final session = _round.session;
     final question = session.question;
     final feedback = widget.strategy.feedback(question);
+    final tema = Theme.of(context);
+    final cores = CoresDoApp.of(context);
     return Scaffold(
       appBar: AppBar(title: Text(widget.strategy.title)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: ListView(
-            controller: _scroll,
-            key: const Key('quiz-scroll-view'),
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
-                'Questão ${_round.number} de ${_round.count} · ${widget.difficulty.label}',
-              ),
-              Text('${_round.points} pontos', key: const Key('round-points')),
-              const SizedBox(height: 16),
-              Text(
-                question.prompt,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              if (question.codeSnippet case final code?) ...[
-                const SizedBox(height: 12),
-                _CodeSnippet(code: code),
-              ],
-              const SizedBox(height: 16),
-              for (var i = 0; i < question.options.length; i++) ...[
-                _AnswerOption(
-                  key: Key('option-$i'),
-                  label: question.options[i],
-                  index: i,
-                  isSelected: session.selectedOptionIndex == i,
-                  isConfirmed: session.isConfirmed,
-                  isCorrectAnswer: question.correctOptionIndex == i,
-                  onTap: () => setState(() => session.selectOption(i)),
-                ),
-                const SizedBox(height: 8),
-              ],
-              if (!session.isConfirmed && !session.usedHint)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    key: const Key('show-hint'),
-                    onPressed: () => setState(session.revealHint),
-                    icon: const Icon(Icons.lightbulb_outline),
-                    label: const Text('Mostrar dica (−30 no acerto)'),
-                  ),
-                ),
-              if (session.usedHint || session.isConfirmed)
-                _InfoCard(
-                  title: 'Dica',
-                  content: question.hint,
-                  icon: Icons.lightbulb_outline,
-                ),
-              const SizedBox(height: 12),
-              if (!session.isConfirmed)
-                FilledButton(
-                  key: const Key('confirm-answer'),
-                  onPressed: session.canConfirm
-                      ? () => setState(() {
-                          _round.confirm();
-                        })
-                      : null,
-                  child: const Text('Confirmar resposta'),
-                )
-              else ...[
-                _AnswerFeedback(
-                  isCorrect: session.isCorrect,
-                  selectedAnswer:
-                      question.options[session.confirmedOptionIndex!],
-                  correctAnswer: question.options[question.correctOptionIndex],
-                  explanation: feedback.explanation,
-                ),
-                if (feedback.canTrace)
-                  OutlinedButton.icon(
-                    key: const Key('view-execution'),
-                    onPressed: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute(
-                        builder: (_) => QuizExecutionScreen(question: question),
-                      ),
-                    ),
-                    icon: const Icon(Icons.code),
-                    label: const Text('Ver execução'),
-                  ),
-                const SizedBox(height: 12),
-                FilledButton(
-                  key: Key(_round.isLast ? 'finish-quiz' : 'next-question'),
-                  onPressed: _continueRound,
-                  child: Text(
-                    _round.isLast ? 'Ver resultado' : 'Próxima questão',
-                  ),
-                ),
-              ],
-            ],
+      body: PaginaRolavel(
+        controller: _scroll,
+        listaKey: const Key('quiz-scroll-view'),
+        children: [
+          CabecalhoDaPartida(
+            posicao:
+                'Questão ${_round.number} de ${_round.count} · '
+                '${widget.difficulty.label}',
+            pontos: '${_round.points} pontos',
+            pontosKey: const Key('round-points'),
+            atual: _round.number,
+            total: _round.count,
+            cores: cores.doModo(widget.strategy.title),
           ),
-        ),
+          const SizedBox(height: Espaco.xl),
+          Text(question.prompt, style: tema.textTheme.headlineSmall),
+          if (question.codeSnippet case final code?) ...[
+            const SizedBox(height: Espaco.m),
+            _CodeSnippet(code: code),
+          ],
+          const SizedBox(height: Espaco.l),
+          for (var i = 0; i < question.options.length; i++) ...[
+            _AnswerOption(
+              key: Key('option-$i'),
+              label: question.options[i],
+              index: i,
+              isSelected: session.selectedOptionIndex == i,
+              isConfirmed: session.isConfirmed,
+              isCorrectAnswer: question.correctOptionIndex == i,
+              onTap: () => setState(() => session.selectOption(i)),
+            ),
+            const SizedBox(height: Espaco.xs),
+          ],
+          if (!session.isConfirmed && !session.usedHint)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const Key('show-hint'),
+                onPressed: () => setState(session.revealHint),
+                icon: const Icon(Icons.lightbulb_outline_rounded),
+                label: const Text('Mostrar dica (−30 no acerto)'),
+              ),
+            ),
+          if (session.usedHint || session.isConfirmed) ...[
+            const SizedBox(height: Espaco.xs),
+            CartaoDeAviso(
+              titulo: 'Dica',
+              conteudo: question.hint,
+              icone: Icons.lightbulb_outline_rounded,
+            ),
+          ],
+          const SizedBox(height: Espaco.m),
+          if (!session.isConfirmed)
+            FilledButton(
+              key: const Key('confirm-answer'),
+              onPressed: session.canConfirm
+                  ? () => setState(() {
+                      _round.confirm();
+                    })
+                  : null,
+              child: const Text('Confirmar resposta'),
+            )
+          else ...[
+            _AnswerFeedback(
+              isCorrect: session.isCorrect,
+              selectedAnswer: question.options[session.confirmedOptionIndex!],
+              correctAnswer: question.options[question.correctOptionIndex],
+              explanation: feedback.explanation,
+            ),
+            const SizedBox(height: Espaco.s),
+            if (feedback.canTrace) ...[
+              OutlinedButton.icon(
+                key: const Key('view-execution'),
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => QuizExecutionScreen(question: question),
+                  ),
+                ),
+                icon: const Icon(Icons.code_rounded),
+                label: const Text('Ver execução'),
+              ),
+              const SizedBox(height: Espaco.s),
+            ],
+            FilledButton(
+              key: Key(_round.isLast ? 'finish-quiz' : 'next-question'),
+              onPressed: _continueRound,
+              child: Text(_round.isLast ? 'Ver resultado' : 'Próxima questão'),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -183,47 +186,89 @@ class _AnswerOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final Color? backgroundColor;
-    final Color borderColor;
+    final tema = Theme.of(context);
+    final esquema = tema.colorScheme;
+    final acerto = CoresDoApp.of(context).acerto;
 
+    final Color fundo;
+    final Color borda;
+    final Color texto;
+    final IconData? icone;
     if (isConfirmed && isCorrectAnswer) {
-      backgroundColor = theme.colorScheme.primaryContainer;
-      borderColor = theme.colorScheme.primary;
+      (fundo, borda, texto) = (acerto.fundo, acerto.cor, acerto.sobreFundo);
+      icone = Icons.check_circle_rounded;
     } else if (isConfirmed && isSelected) {
-      backgroundColor = theme.colorScheme.errorContainer;
-      borderColor = theme.colorScheme.error;
+      (fundo, borda, texto) = (
+        esquema.errorContainer,
+        esquema.error,
+        esquema.onErrorContainer,
+      );
+      icone = Icons.cancel_rounded;
     } else if (isSelected) {
-      backgroundColor = theme.colorScheme.secondaryContainer;
-      borderColor = theme.colorScheme.secondary;
+      (fundo, borda, texto) = (
+        esquema.secondaryContainer,
+        esquema.primary,
+        esquema.onSecondaryContainer,
+      );
+      icone = Icons.radio_button_checked_rounded;
     } else {
-      backgroundColor = null;
-      borderColor = theme.colorScheme.outlineVariant;
+      fundo = tema.cardTheme.color ?? esquema.surface;
+      borda = esquema.outlineVariant;
+      texto = esquema.onSurface;
+      icone = null;
     }
+    final destacada = isSelected || (isConfirmed && isCorrectAnswer);
 
-    return Material(
-      color: backgroundColor ?? theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(color: borderColor),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: isConfirmed ? null : onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Text('${String.fromCharCode(65 + index)}.'),
-              const SizedBox(width: 12),
-              Expanded(child: Text(label)),
-              if (isConfirmed && isCorrectAnswer)
-                const Icon(Icons.check_circle_outline)
-              else if (isConfirmed && isSelected)
-                const Icon(Icons.cancel_outlined)
-              else if (isSelected)
-                const Icon(Icons.radio_button_checked),
-            ],
+    return Semantics(
+      selected: isSelected,
+      child: Material(
+        color: fundo,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(color: borda, width: destacada ? 2 : 1),
+          borderRadius: BorderRadius.circular(Raio.controle),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: isConfirmed ? null : onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Espaco.m,
+                vertical: Espaco.s,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: borda),
+                    ),
+                    child: Text(
+                      String.fromCharCode(65 + index),
+                      style: tema.textTheme.labelLarge?.copyWith(
+                        color: texto,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: Espaco.s),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: tema.textTheme.bodyLarge?.copyWith(color: texto),
+                    ),
+                  ),
+                  if (icone != null) ...[
+                    const SizedBox(width: Espaco.xs),
+                    Icon(icone, color: borda),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -238,52 +283,19 @@ class _CodeSnippet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final esquema = Theme.of(context).colorScheme;
     return Card(
       key: const Key('logic-code'),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      color: esquema.surfaceContainerHighest,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Espaco.m),
         child: SelectableText(
           code,
-          style: const TextStyle(fontFamily: 'monospace'),
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.title,
-    required this.content,
-    required this.icon,
-  });
-
-  final String title;
-  final String content;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: 4),
-                  Text(content),
-                ],
-              ),
-            ),
-          ],
+          style: TextStyle(
+            fontFamily: 'monospace',
+            height: 1.5,
+            color: esquema.onSurface,
+          ),
         ),
       ),
     );
@@ -305,11 +317,17 @@ class _AnswerFeedback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _InfoCard(
-      title: isCorrect ? 'Resposta correta!' : 'Resposta incorreta.',
-      content:
+    final esquema = Theme.of(context).colorScheme;
+    final acerto = CoresDoApp.of(context).acerto;
+    return CartaoDeAviso(
+      titulo: isCorrect ? 'Resposta correta!' : 'Resposta incorreta.',
+      conteudo:
           'Resposta selecionada: $selectedAnswer\nGabarito: $correctAnswer\n\n$explanation',
-      icon: isCorrect ? Icons.check_circle_outline : Icons.info_outline,
+      icone: isCorrect
+          ? Icons.check_circle_rounded
+          : Icons.info_outline_rounded,
+      fundo: isCorrect ? acerto.fundo : esquema.errorContainer,
+      sobreFundo: isCorrect ? acerto.sobreFundo : esquema.onErrorContainer,
     );
   }
 }

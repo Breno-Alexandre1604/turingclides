@@ -18,7 +18,7 @@ class BancoLocal {
   /// Mesmo arquivo usado pela primeira versão do histórico dos quizzes,
   /// para que a migração da versão 1 aconteça no aparelho.
   static const nomeArquivo = 'turingclides_quizzes.db';
-  static const versao = 2;
+  static const versao = 3;
 
   final String caminho;
   final DatabaseFactory? _fabrica;
@@ -53,7 +53,12 @@ class BancoLocal {
       },
       onCreate: (banco, _) => criarEsquema(banco),
       onUpgrade: (banco, anterior, _) async {
-        if (anterior < 2) await _migrarDaVersao1(banco);
+        if (anterior < 2) {
+          // Já cria o esquema atual inteiro, preferências incluídas.
+          await _migrarDaVersao1(banco);
+        } else if (anterior < 3) {
+          await criarTabelaDePreferencias(banco);
+        }
       },
     ),
   );
@@ -117,7 +122,18 @@ Future<void> criarEsquema(DatabaseExecutor banco) async {
       PRIMARY KEY (jogador_id, modo, topico)
     )
   ''');
+  await criarTabelaDePreferencias(banco);
 }
+
+/// Versão 3: preferências do app, como o tema claro ou escuro. Ficam fora
+/// das tabelas do jogador, então "Apagar meus dados" não as apaga.
+Future<void> criarTabelaDePreferencias(DatabaseExecutor banco) =>
+    banco.execute('''
+      CREATE TABLE preferencia (
+        chave TEXT PRIMARY KEY NOT NULL CHECK (length(chave) BETWEEN 1 AND 40),
+        valor TEXT NOT NULL CHECK (length(valor) <= 200)
+      )
+    ''');
 
 /// A versão 1 guardava cada partida de quiz como JSON em `quiz_results`.
 /// A migração roda dentro da transação de abertura: ou tudo migra, ou o

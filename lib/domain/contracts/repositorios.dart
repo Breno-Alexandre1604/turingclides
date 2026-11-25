@@ -34,3 +34,12 @@ abstract interface class RepositorioDeProgresso {
   /// Progresso por modo e tópico, ordenado por modo e depois tópico.
   Future<List<ProgressoTopico>> listarPorJogador(int jogadorId);
 }
+
+abstract interface class RepositorioDePreferencias {
+  /// Valor guardado para [chave], ou `null` se nunca foi gravado.
+  Future<String?> ler(String chave);
+
+  /// Grava ou substitui o valor de [chave]. Lança [ArgumentError] se a
+  /// chave ou o valor estiverem fora das regras de `Preferencias`.
+  Future<void> gravar(String chave, String valor);
+}

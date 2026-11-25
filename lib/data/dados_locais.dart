@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../application/servico_de_perfil.dart';
 import '../application/servico_de_progresso.dart';
 import '../domain/contracts/repositorios.dart';
@@ -19,11 +21,11 @@ final DadosLocais dadosLocais = plataforma.criarDadosLocais();
 /// contrato [QuizHistoryRepository], usado pelas telas dos quizzes.
 class DadosLocais implements QuizHistoryRepository {
   DadosLocais({
-    required RepositorioDeJogadores jogadores,
-    required RepositorioDePartidas partidas,
-    required RepositorioDeProgresso progresso,
-  }) : perfil = ServicoDePerfil(jogadores),
-       progresso = ServicoDeProgresso(partidas: partidas, progresso: progresso);
+    required this._jogadores,
+    required this._partidas,
+    required this._progresso,
+    required this.preferencias,
+  });
 
   /// Versão sem banco para testes e para desenvolver telas.
   DadosLocais.emMemoria([ArmazemEmMemoria? armazem])
@@ -34,10 +36,31 @@ class DadosLocais implements QuizHistoryRepository {
         jogadores: JogadoresEmMemoria(armazem),
         partidas: PartidasEmMemoria(armazem),
         progresso: ProgressoEmMemoria(armazem),
+        preferencias: PreferenciasEmMemoria(armazem),
       );
 
-  final ServicoDePerfil perfil;
-  final ServicoDeProgresso progresso;
+  final RepositorioDeJogadores _jogadores;
+  final RepositorioDePartidas _partidas;
+  final RepositorioDeProgresso _progresso;
+  final _avisos = _Avisos();
+
+  late final ServicoDePerfil perfil = ServicoDePerfil(
+    _jogadores,
+    aoMudar: _avisos.avisar,
+  );
+
+  late final ServicoDeProgresso progresso = ServicoDeProgresso(
+    partidas: _partidas,
+    progresso: _progresso,
+    aoMudar: _avisos.avisar,
+  );
+
+  /// Tema e outras preferências do app.
+  final RepositorioDePreferencias preferencias;
+
+  /// Avisa quando o perfil muda, uma partida nova é gravada ou os dados são
+  /// apagados. A Home usa para atualizar pontos e recordes ao voltar do jogo.
+  Listenable get mudancas => _avisos;
 
   /// Recebe o resultado de um quiz e grava como partida do jogador atual.
   /// Repetir com o mesmo resultado não duplica pontos.
@@ -57,4 +80,8 @@ class DadosLocais implements QuizHistoryRepository {
         partida.paraQuiz(),
     ];
   }
+}
+
+class _Avisos extends ChangeNotifier {
+  void avisar() => notifyListeners();
 }

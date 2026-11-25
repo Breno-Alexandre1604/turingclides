@@ -4,9 +4,12 @@ import '../domain/models/jogador.dart';
 
 /// Cria, busca e edita o perfil local (diagrama 7).
 class ServicoDePerfil {
-  ServicoDePerfil(this._jogadores);
+  ServicoDePerfil(this._jogadores, {this._aoMudar});
 
   final RepositorioDeJogadores _jogadores;
+
+  /// Avisado depois de cada alteração gravada, para as telas recarregarem.
+  final void Function()? _aoMudar;
 
   /// Devolve o jogador desta instalação. No primeiro uso cria o perfil com o
   /// apelido padrão, para que a primeira partida já possa ser gravada.
@@ -21,9 +24,14 @@ class ServicoDePerfil {
   Future<Jogador> alterarApelido(String apelido) async {
     final valido = Apelido.normalizar(apelido);
     final atual = await obterJogadorAtual();
-    return _jogadores.salvar(atual.copyWith(apelido: valido));
+    final salvo = await _jogadores.salvar(atual.copyWith(apelido: valido));
+    _aoMudar?.call();
+    return salvo;
   }
 
   /// Apaga todos os dados do jogador neste aparelho.
-  Future<void> apagarDados() => _jogadores.apagarTudo();
+  Future<void> apagarDados() async {
+    await _jogadores.apagarTudo();
+    _aoMudar?.call();
+  }
 }

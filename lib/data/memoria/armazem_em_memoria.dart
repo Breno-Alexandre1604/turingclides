@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../domain/contracts/repositorios.dart';
 import '../../domain/models/jogador.dart';
 import '../../domain/models/partida.dart';
+import '../../domain/models/preferencias.dart';
 import '../../domain/models/progresso_topico.dart';
 
 /// Dados de desenvolvimento (cartão D2): os mesmos contratos do SQLite,
@@ -21,6 +22,7 @@ class ArmazemEmMemoria {
 
   Jogador? _jogador;
   final _partidas = <String, Partida>{};
+  final _preferencias = <String, String>{};
 
   void _restaurar(String texto) {
     try {
@@ -37,10 +39,21 @@ class ArmazemEmMemoria {
       for (final partida in partidas) {
         _partidas[partida.id] = partida;
       }
+      // Campo opcional, ausente nos dados salvos antes do tema. Valores fora
+      // das regras são ignorados, um a um.
+      final preferencias = json['preferencias'];
+      if (preferencias is Map<String, dynamic>) {
+        for (final MapEntry(:key, :value) in preferencias.entries) {
+          if (value is String && Preferencias.valida(key, value)) {
+            _preferencias[key] = value;
+          }
+        }
+      }
     } on Object {
       // Conteúdo corrompido ou adulterado: começa vazio em vez de travar.
       _jogador = null;
       _partidas.clear();
+      _preferencias.clear();
     }
   }
 
@@ -49,6 +62,7 @@ class ArmazemEmMemoria {
       'versao': versao,
       'jogador': _jogador?.toJson(),
       'partidas': [for (final p in _partidas.values) p.toJson()],
+      'preferencias': _preferencias,
     }),
   );
 
@@ -56,6 +70,7 @@ class ArmazemEmMemoria {
   void _alterar(void Function() alteracao) {
     final jogador = _jogador;
     final partidas = Map.of(_partidas);
+    final preferencias = Map.of(_preferencias);
     alteracao();
     try {
       _persistir();
@@ -64,6 +79,9 @@ class ArmazemEmMemoria {
       _partidas
         ..clear()
         ..addAll(partidas);
+      _preferencias
+        ..clear()
+        ..addAll(preferencias);
       rethrow;
     }
   }
@@ -146,4 +164,19 @@ class ProgressoEmMemoria implements RepositorioDeProgresso {
   @override
   Future<List<ProgressoTopico>> listarPorJogador(int jogadorId) async =>
       ProgressoTopico.calcular(_armazem._doJogador(jogadorId));
+}
+
+class PreferenciasEmMemoria implements RepositorioDePreferencias {
+  PreferenciasEmMemoria(this._armazem);
+
+  final ArmazemEmMemoria _armazem;
+
+  @override
+  Future<String?> ler(String chave) async => _armazem._preferencias[chave];
+
+  @override
+  Future<void> gravar(String chave, String valor) async {
+    Preferencias.validar(chave, valor);
+    _armazem._alterar(() => _armazem._preferencias[chave] = valor);
+  }
 }

@@ -10,6 +10,7 @@ import 'package:turingclides/data/dados_locais.dart';
 import 'package:turingclides/data/sqlite/banco_local.dart';
 import 'package:turingclides/data/sqlite/jogadores_sqlite.dart';
 import 'package:turingclides/data/sqlite/partidas_sqlite.dart';
+import 'package:turingclides/data/sqlite/preferencias_sqlite.dart';
 import 'package:turingclides/data/sqlite/progresso_sqlite.dart';
 
 import 'contrato_dados.dart';
@@ -28,6 +29,7 @@ void main() {
       jogadores: JogadoresSQLite(novo),
       partidas: PartidasSQLite(novo),
       progresso: ProgressoSQLite(novo),
+      preferencias: PreferenciasSQLite(novo),
     );
   }
 
@@ -129,6 +131,34 @@ void main() {
         expect(antigas, isEmpty);
       },
     );
+
+    test('banco da versão 2 ganha a tabela de preferências', () async {
+      final v2 = await fabrica.openDatabase(
+        caminho,
+        options: OpenDatabaseOptions(
+          version: 2,
+          onCreate: (db, _) => db.execute(
+            'CREATE TABLE jogador (id INTEGER PRIMARY KEY NOT NULL, '
+            'apelido TEXT NOT NULL, pontos_totais INTEGER NOT NULL DEFAULT 0, '
+            'criado_em INTEGER NOT NULL)',
+          ),
+        ),
+      );
+      await v2.insert('jogador', {
+        'id': 1,
+        'apelido': 'Ada',
+        'pontos_totais': 40,
+        'criado_em': 0,
+      });
+      await v2.close();
+
+      final dados = await abrir();
+      final conexao = await banco!.abrir();
+      expect(await conexao.getVersion(), BancoLocal.versao);
+      expect((await dados.perfil.obterJogadorAtual()).apelido, 'Ada');
+      await dados.preferencias.gravar('tema', 'dark');
+      expect(await (await abrir()).preferencias.ler('tema'), 'dark');
+    });
 
     test('chaves estrangeiras e apagamento seguro ficam ligados', () async {
       await abrir();

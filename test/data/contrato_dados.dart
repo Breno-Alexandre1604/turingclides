@@ -3,6 +3,7 @@ import 'package:turingclides/data/dados_locais.dart';
 import 'package:turingclides/domain/models/apelido.dart';
 import 'package:turingclides/domain/models/jogador.dart';
 import 'package:turingclides/domain/models/partida.dart';
+import 'package:turingclides/domain/models/preferencias.dart';
 import 'package:turingclides/domain/models/progresso_topico.dart';
 import 'package:turingclides/domain/models/quiz_result.dart';
 
@@ -206,6 +207,47 @@ void contratoDosDadosLocais({
     final reaberto = await reabrir();
     expect((await reaberto.all()).single.toJson(), original.toJson());
   });
+
+  test(
+    'tema escolhido continua ao reabrir e não some ao apagar dados',
+    () async {
+      final dados = await abrir();
+      expect(await dados.preferencias.ler(Preferencias.tema), isNull);
+      await dados.preferencias.gravar(Preferencias.tema, 'dark');
+      await dados.preferencias.gravar(Preferencias.tema, 'light');
+      await dados.perfil.apagarDados();
+
+      final reaberto = await reabrir();
+      expect(await reaberto.preferencias.ler(Preferencias.tema), 'light');
+      expect(
+        () => reaberto.preferencias.gravar('Tema; DROP', 'x'),
+        throwsArgumentError,
+      );
+      expect(
+        () => reaberto.preferencias.gravar(Preferencias.tema, 'x' * 201),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test(
+    'avisa as telas quando algo muda, mas não na partida repetida',
+    () async {
+      final dados = await abrir();
+      var avisos = 0;
+      dados.mudancas.addListener(() => avisos++);
+      final a = resultado('aviso', respostas: [('Porcentagem', true, 100)]);
+
+      await dados.save(a);
+      expect(avisos, 1);
+      await dados.save(a);
+      expect(avisos, 1, reason: 'a mesma partida não muda nada');
+      await dados.perfil.alterarApelido('Ada');
+      expect(avisos, 2);
+      await dados.perfil.apagarDados();
+      expect(avisos, 3);
+    },
+  );
 }
 
 /// Monta um resultado de quiz como o PartidaController entrega.

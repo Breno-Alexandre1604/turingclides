@@ -58,9 +58,9 @@ Arquivos de outros colegas que precisaram de um ajuste pequeno:
 - `test/widget_test.dart`: o histórico de teste agora estende `DadosLocais.emMemoria()`. As verificações continuam as mesmas.
 - Removidos `lib/data/quiz_history_sqlite.dart`, `lib/data/quiz_history_web.dart` e os testes deles. O comportamento que eles garantiam (não duplicar e não gravar pela metade) continua coberto pelos testes novos.
 
-## Modelo de dados (SQLite, versão 2)
+## Modelo de dados (SQLite, versão 3)
 
-O banco fica no arquivo `turingclides_quizzes.db`, na pasta privada do app. É o mesmo nome da versão 1 de Breno, para que os aparelhos que já tinham partidas sejam migrados.
+O banco fica no arquivo `turingclides_quizzes.db`, na pasta privada do app. É o mesmo nome da versão 1 de Breno, para que os aparelhos que já tinham partidas sejam migrados. A versão 3 só acrescenta a tabela `preferencia` (tema claro ou escuro); quem está na versão 2 ganha a tabela ao abrir o app, sem perder nada.
 
 ```
 jogador (1) ──< partida (1) ──< resposta_partida
@@ -74,8 +74,9 @@ jogador (1) ──< partida (1) ──< resposta_partida
 | `partida` | `id` (texto), `jogador_id`, `modo`, `dificuldade`, `qtd_questoes`, `tempo_por_questao`, `operacoes`, `iniciada_em`, `finalizada_em`, `pontuacao`, `acertos` | Id único; jogador precisa existir; acertos entre 0 e a quantidade de questões |
 | `resposta_partida` | `id`, `partida_id`, `ordem`, `questao_id`, `topico`, `enunciado`, `resposta_dada`, `resposta_correta`, `correta`, `tempo_gasto_ms`, `pontos`, `usou_dica` | Uma resposta por posição na partida; pontos ≥ 0; tempo ≥ 0 |
 | `progresso_topico` | `jogador_id`, `modo`, `topico`, `total_respondidas`, `total_acertos`, `ultima_vez` | Chave (jogador, modo, tópico); acertos ≤ respondidas |
+| `preferencia` | `chave`, `valor` | Chave de 1 a 40 caracteres; valor até 200. Hoje só guarda `tema` = `system`, `light` ou `dark` |
 
-Datas são gravadas em milissegundos UTC. Apagar o jogador apaga em cascata as partidas, as respostas e o progresso.
+Datas são gravadas em milissegundos UTC. Apagar o jogador apaga em cascata as partidas, as respostas e o progresso. A preferência de tema não é dado pessoal e continua depois de "Apagar meus dados".
 
 ### Diferenças em relação ao diagrama 6B
 
@@ -106,7 +107,14 @@ abstract interface class RepositorioDePartidas {
 abstract interface class RepositorioDeProgresso {
   Future<List<ProgressoTopico>> listarPorJogador(int jogadorId);
 }
+
+abstract interface class RepositorioDePreferencias {
+  Future<String?> ler(String chave);
+  Future<void> gravar(String chave, String valor);  // recusa chave ou valor fora das regras
+}
 ```
+
+`DadosLocais.mudancas` avisa as telas quando o apelido muda, uma partida nova é gravada ou os dados são apagados. A Home usa esse aviso para atualizar pontos, acerto e recordes sozinha ao voltar de um jogo. Gravar de novo a mesma partida não avisa, porque nada mudou.
 
 No UML, `RepositorioDeProgresso` também tem `salvar(progresso)`. Aqui o progresso é gravado por `RepositorioDePartidas.salvar`, dentro da mesma transação da partida. Assim nunca existe progresso contado sem a partida correspondente, nem o contrário.
 

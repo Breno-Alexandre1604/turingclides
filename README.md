@@ -12,7 +12,7 @@ Trabalho da disciplina de Desenvolvimento Mobile (UNIPÊ), com o projeto orienta
 | **Quiz de Matemática** | 10 questões de 4 alternativas em 3 níveis, com dica (−30 pontos) e explicação passo a passo |
 | **Quiz de Lógica** | 10 trechos de código Dart: "qual é a saída?", com teste de mesa linha a linha |
 
-Também há **Perfil** (apelido, pontos, recordes por jogo, apagar meus dados), **Histórico** (cada partida e cada resposta) e **Progresso** (taxa de acerto por assunto).
+Também há **Perfil** (apelido, pontos, recordes por jogo, tema claro ou escuro, apagar meus dados), **Histórico** (cada partida e cada resposta) e **Progresso** (taxa de acerto por assunto), em abas que trocam deslizando o dedo. A Home mostra os pontos, o acerto e os recordes do jogador.
 
 ## Equipe
 
@@ -76,6 +76,7 @@ As questões ficam em `lib/domain/games/quiz_matematica/` e `lib/domain/games/qu
 | [Visão geral](docs/VISAO_GERAL.md) | O que é o app, quem faz cada parte, o que o jogador vê em cada tela e como as peças se conectam |
 | [Apresentação](docs/APRESENTACAO.md) | Roteiro, checklist de entrega e perguntas prováveis |
 | [Dados e progresso](docs/DADOS_E_PROGRESSO.md) | SQLite, perfil local, histórico, recordes e progresso por assunto |
+| [Identidade visual](docs/IDENTIDADE_VISUAL.md) | Ícone, regras de espaço e cor, modo claro e escuro, rolagem |
 | [Segurança do APK](docs/SEGURANCA.md) | Regras de segurança, como gerar e instalar o APK e próximas melhorias |
 | [Demonstração dos quizzes](docs/DEMONSTRACAO_QUIZZES.md) | Roteiro de apresentação dos quizzes (Breno) |
 | [Estrutura de pastas](docs/ESTRUTURA_TURINGCLIDES.md) | Onde cada arquivo deve ficar |

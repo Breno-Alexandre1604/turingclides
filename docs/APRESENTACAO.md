@@ -11,6 +11,7 @@ Roteiro, checklist de entrega e respostas para as perguntas mais prováveis. Ver
 | APK assinado pela equipe | Gerado com `.\tool\gerar_apk_release.ps1` na máquina que tem `android\key.properties` (veja [Segurança](SEGURANCA.md)) |
 | Visão geral, telas e equipe | [VISAO_GERAL.md](VISAO_GERAL.md) |
 | Dados e progresso | [DADOS_E_PROGRESSO.md](DADOS_E_PROGRESSO.md) |
+| Ícone, cores, modo escuro e rolagem | [IDENTIDADE_VISUAL.md](IDENTIDADE_VISUAL.md) |
 | Segurança e instalação do APK | [SEGURANCA.md](SEGURANCA.md) |
 | Roteiro detalhado dos quizzes | [DEMONSTRACAO_QUIZZES.md](DEMONSTRACAO_QUIZZES.md) |
 
@@ -25,7 +26,7 @@ Roteiro, checklist de entrega e respostas para as perguntas mais prováveis. Ver
 | Perfil, partidas e progresso continuam após reiniciar | Feito | `dados_sqlite_test.dart` fecha e reabre o banco. **Conferir também no celular** |
 | Salvar de novo a mesma partida não duplica pontos | Feito | Contrato dos dados (simultâneo e após reabrir) |
 | Navegação, teclado e cronômetros funcionam ao sair e voltar | Feito | Teste "sair no meio da conta cancela o cronômetro" e foco do campo |
-| `flutter analyze` e testes executados | Feito | 0 problemas, 50 testes; o CI repete a cada push |
+| `flutter analyze` e testes executados | Feito | 0 problemas, 58 testes; o CI repete a cada push |
 | README com instalação, execução, funcionalidades e equipe | Feito | `README.md` |
 | APK conferido no aparelho da demonstração | **Pendente** | Instalar, jogar os três modos, fechar e reabrir |
 | Versão final identificada no GitHub | **Pendente** | Aprovar o pull request da `release/v1.0.0` para a `main` e criar a tag `v1.0.0` |
@@ -37,7 +38,7 @@ Roteiro, checklist de entrega e respostas para as perguntas mais prováveis. Ver
 | 0:00 a 0:30 | Leonardo e Lucas | Home com os três modos, tema e navegação. As camadas do app (telas, controle, jogo, contratos, banco) |
 | 0:30 a 1:30 | Eduardo | Conta Rápida: marque soma e multiplicação, nível Fácil. Acerte uma conta e deixe outra estourar os 10 s. Mostre o resultado com o tempo de cada conta |
 | 1:30 a 3:00 | Breno | Quiz de Matemática com dica e explicação. Quiz de Lógica com o teste de mesa ([roteiro dele](DEMONSTRACAO_QUIZZES.md)) |
-| 3:00 a 4:15 | Renan | "Partida salva no histórico". Perfil: tente o apelido "A" (recusado) e salve um válido. Histórico e Progresso por assunto. Feche o app pelo gerenciador de tarefas, abra de novo e mostre que tudo continua |
+| 3:00 a 4:15 | Renan | "Partida salva no histórico" e a Home já com pontos e recorde. Perfil: tente o apelido "A" (recusado) e salve um válido; troque para o modo Escuro. Deslize para Histórico e Progresso. Feche o app pelo gerenciador de tarefas, abra de novo e mostre que tudo continua, tema incluído |
 | 4:15 a 5:00 | Renan | Segurança: sem internet, sem backup, chave fora do Git, CI com testes a cada push |
 
 ## Se algo der errado

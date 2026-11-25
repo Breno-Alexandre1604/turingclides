@@ -1,4 +1,4 @@
-package com.example.turingclides
+package br.edu.unipe.turingclides
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -1,8 +1,19 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+      Segurança (docs/SEGURANCA.md): sem permissão de internet na versão de
+      release, sem backup dos dados do jogador e sem tráfego HTTP em texto puro.
+    -->
     <application
-        android:label="turingclides"
+        android:label="Turingclides"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"

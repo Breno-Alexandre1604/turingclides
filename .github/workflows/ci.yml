@@ -1,0 +1,57 @@
+# Verificação automática: a cada push e pull request, roda a análise
+# estática e os testes e gera um APK de teste para download.
+name: CI
+
+on:
+  push:
+    branches: [main, "release/**", "integracao/**", "feat/**"]
+  pull_request:
+  workflow_dispatch:
+
+# Menor permissão possível: o workflow só lê o repositório.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Analisar, testar e gerar APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Dependências
+        run: flutter pub get
+
+      - name: Análise estática
+        run: flutter analyze
+
+      - name: Testes
+        run: flutter test
+
+      # Sem a chave da equipe (que nunca vai para o GitHub), o APK sai
+      # assinado com a chave de debug: serve para testar, não para publicar.
+      - name: APK de teste (release ofuscado)
+        run: flutter build apk --release --obfuscate --split-debug-info=build/simbolos-debug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: turingclides-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
